@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lavid HTML 1.0pre-h4 - AI Code Workspace</title>
+  <title>Lavid HTML 1.0pre-h5 - AI Code Workspace</title>
   <style>
     :root {
       --bg: #0f1117;
@@ -298,6 +298,45 @@
     .editor-wrap textarea {
       border: none;
       border-radius: 0;
+      overflow: auto;
+    }
+
+    .local-run-panel {
+      display: grid;
+      gap: 14px;
+      width: 100%;
+    }
+
+    .local-run-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+
+    .local-run-card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      background: var(--panel-glass-2);
+    }
+
+    .local-run-card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .command-block {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--code-fg);
+      background: var(--code-bg);
+      max-height: 260px;
+      overflow: auto;
     }
 
     .list {
@@ -894,6 +933,7 @@
         <div class="row">
           <button id="checkBtn">檢查 Ctrl+B</button>
           <button class="accent" id="browserRunBtn">瀏覽器安全檢查</button>
+          <button id="localRunRibbonBtn">本地執行助手</button>
           <button id="dependencyBtn">資源掃描</button>
           <button id="dependencyHtmlBtn">HTML 報告</button>
         </div>
@@ -962,6 +1002,7 @@
           <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">F</span> 搜尋</strong><span>在輸入區、輸出區、執行結果中定位關鍵字。</span></div>
           <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">K</span> 命令</strong><span>打開命令面板，快速執行常用功能。</span></div>
           <div class="shortcut-card"><strong><span class="kbd">F5</span> RUN</strong><span>重新整合目前專案的批次與程式碼分段。</span></div>
+          <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">Alt</span> + <span class="kbd">R</span> 本地執行</strong><span>開啟本地執行助手與下載命令。</span></div>
           <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">S</span> 儲存</strong><span>下載目前整合輸出。</span></div>
           <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">N</span> 新專案</strong><span>新增工作專案，適合 A/B 程式並行開發。</span></div>
           <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">Z</span> 還原</strong><span>還原最近刪除的批次、分段或資源。</span></div>
@@ -1055,6 +1096,7 @@
         <div class="row">
           <button id="copyPieceBtn">複製本段</button>
           <button id="savePieceBtn">下載本段</button>
+          <button id="localRunCodeBtn">本地執行</button>
           <button class="danger" id="deletePieceBtn2">刪除本段</button>
           <button id="restoreOriginalBtn">回原始分段</button>
           <label class="badge">分段數 <input id="splitCount" type="number" value="8" min="1" max="64" style="width:70px"></label>
@@ -1086,6 +1128,7 @@
         <div class="row">
           <button id="safeCheckBtn">瀏覽器安全檢查</button>
           <button id="runHtmlPreviewBtn">HTML 預覽</button>
+          <button class="accent" id="localRunBtn">本地執行助手</button>
           <span class="hint">本頁不會呼叫本機編譯器</span>
         </div>
         <div class="editor-wrap">
@@ -1137,7 +1180,7 @@
 (() => {
   "use strict";
 
-  const APP_VERSION = "Lavid HTML 1.0pre-h4";
+  const APP_VERSION = "Lavid HTML 1.0pre-h5";
   const AUTH_KEY = "lavid-html-auth";
   const AUTH_SESSION_KEY = "lavid-html-auth-ok";
   const AUTH_REMEMBER_KEY = "lavid-html-auth-remember";
@@ -1481,6 +1524,18 @@ ${latexBlock}
   function updateLineNumbers(textarea, lineEl) {
     const lines = Math.max(1, textarea.value.split("\n").length);
     lineEl.textContent = Array.from({ length: lines }, (_, i) => i + 1).join("\n");
+    syncLineScroll(textarea, lineEl);
+  }
+
+  function syncLineScroll(textarea, lineEl) {
+    lineEl.scrollTop = textarea.scrollTop;
+    lineEl.scrollLeft = textarea.scrollLeft;
+  }
+
+  function bindEditorScroll(textareaId, lineId) {
+    const textarea = $(textareaId);
+    const lineEl = $(lineId);
+    textarea.addEventListener("scroll", () => syncLineScroll(textarea, lineEl));
   }
 
   function syncEditors() {
@@ -1680,6 +1735,120 @@ ${latexBlock}
 
   function activeLangs() {
     return state.activeLangs || project().codeLangs;
+  }
+
+  function inferLanguageFromCode(code) {
+    const text = String(code || "").trim();
+    if (!text) return "";
+    if (/^\s*[\[{]/.test(text)) {
+      try { JSON.parse(text); return "json"; } catch {}
+    }
+    if (/\\documentclass|\\begin\{document\}|\\usepackage|\\includegraphics/i.test(text)) return "latex";
+    if (/<!doctype html|<html[\s>]|<body[\s>]|<script[\s>]/i.test(text)) return "html";
+    if (/^\s*#include\s*<iostream>/m.test(text) || /\bstd::|cout\s*<<|cin\s*>>/.test(text)) return "cpp";
+    if (/^\s*#include\s*<stdio\.h>/m.test(text) || /^\s*int\s+main\s*\(/m.test(text) || /\bprintf\s*\(|\bscanf\s*\(/.test(text)) return "c";
+    if (/^\s*(from\s+\S+\s+import|import\s+\w+|def\s+\w+\s*\(|class\s+\w+|if\s+__name__\s*==|print\s*\()/m.test(text) || /\btkinter\b|\btk\./.test(text)) return "python";
+    if (/\bconsole\.log\s*\(|^\s*(const|let|var)\s+\w+\s*=|=>|^\s*function\s+\w+\s*\(/m.test(text)) return "javascript";
+    if (/^\s*using\s+System;|namespace\s+\w+|Console\.Write(Line)?\s*\(/m.test(text)) return "csharp";
+    if (/^\s*public\s+class\s+\w+|System\.out\.println\s*\(/m.test(text)) return "java";
+    if (/^\s*(function\s+.*=|end\s*$)|\b(plot|imshow|imread)\s*\(/m.test(text)) return "matlab";
+    if (/^\s*#!/.test(text) && /bash|sh/.test(text.split("\n")[0])) return "bash";
+    if (/\bWrite-Host\b|\bGet-ChildItem\b|\bSet-Location\b|\$[A-Za-z_]\w*\s*=/.test(text)) return "powershell";
+    if (/^\s*SELECT\s+|^\s*INSERT\s+INTO|^\s*CREATE\s+TABLE|^\s*UPDATE\s+\w+\s+SET/im.test(text)) return "sql";
+    if (/^\s*[.#]?[A-Za-z0-9_-]+\s*\{[\s\S]*\}/.test(text) && /;/.test(text)) return "css";
+    if (/^---\n|^\s*[\w-]+:\s+/m.test(text)) return "yaml";
+    if (/^#{1,6}\s+|```/.test(text)) return "markdown";
+    return "";
+  }
+
+  function currentRunnableCode() {
+    const blocks = activeBlocks();
+    return blocks[state.currentPiece] || $("outputText").value || project().codeBlocks[0] || "";
+  }
+
+  function resolveRunnableLanguage() {
+    const p = project();
+    const selected = p.language || "auto";
+    const pieceLang = activeLangs()[state.currentPiece] || "";
+    const inferred = inferLanguageFromCode(currentRunnableCode());
+    const mismatch = selected !== "auto" && inferred && inferred !== selected;
+    const lang = mismatch ? inferred : (selected !== "auto" ? selected : (inferred || pieceLang || "text"));
+    return { selected, inferred, pieceLang, mismatch, lang };
+  }
+
+  function fileExtForLang(lang) {
+    return ({
+      python: ".py", c: ".c", cpp: ".cpp", matlab: ".m", latex: ".tex", javascript: ".js",
+      typescript: ".ts", java: ".java", csharp: ".cs", bash: ".sh", powershell: ".ps1",
+      html: ".html", css: ".css", sql: ".sql", json: ".json", yaml: ".yaml", markdown: ".md", text: ".txt"
+    })[lang] || ".txt";
+  }
+
+  function localRunCommands(lang, filename) {
+    const q = filename.includes(" ") ? `"${filename}"` : filename;
+    const exe = filename.replace(/\.[^.]+$/, "");
+    const exeQ = exe.includes(" ") ? `"${exe}.exe"` : `${exe}.exe`;
+    const pdf = filename.replace(/\.[^.]+$/, ".pdf");
+    return ({
+      python: [`python ${q}`, `py ${q}`],
+      c: [`gcc ${q} -o ${exeQ}`, `.\\${exe}.exe`],
+      cpp: [`g++ ${q} -std=c++17 -o ${exeQ}`, `.\\${exe}.exe`],
+      javascript: [`node ${q}`],
+      typescript: [`npx ts-node ${q}`, `npx tsc ${q}`],
+      matlab: [`matlab -batch "run('${filename.replace(/'/g, "''")}')"`],
+      latex: [`pdflatex -interaction=nonstopmode ${q}`, `start ${pdf}`],
+      java: [`javac ${q}`, `java ${filename.replace(/\.java$/i, "")}`],
+      csharp: [`dotnet new console -n LavidRun`, `Copy-Item ${q} .\\LavidRun\\Program.cs -Force`, `dotnet run --project .\\LavidRun`],
+      bash: [`bash ${q}`],
+      powershell: [`powershell -ExecutionPolicy Bypass -File .\\${filename}`],
+      html: [`start ${q}`],
+      css: [`start ${q}`],
+      sql: [`sqlite3 lavid.sqlite ".read ${filename}"`],
+      json: [`python -m json.tool ${q}`],
+      yaml: [`python -c "import yaml,sys; yaml.safe_load(open('${filename}')); print('YAML OK')"`],
+      markdown: [`start ${q}`],
+      text: [`notepad ${q}`]
+    })[lang] || [`notepad ${q}`];
+  }
+
+  function runnableFileName(lang) {
+    return `${fileSafeName(state.currentProject || "lavid")}_piece_${state.currentPiece + 1}${fileExtForLang(lang)}`;
+  }
+
+  function downloadCurrentRunnable() {
+    const info = resolveRunnableLanguage();
+    download(runnableFileName(info.lang), currentRunnableCode(), "text/plain;charset=utf-8");
+    setStatus(`已下載 ${langDisplay(info.lang)} 檔案，可用本地執行命令測試。`);
+  }
+
+  function openLocalRunAssistant() {
+    const info = resolveRunnableLanguage();
+    const code = currentRunnableCode();
+    const filename = runnableFileName(info.lang);
+    const commands = localRunCommands(info.lang, filename);
+    const warning = info.mismatch
+      ? `<div class="local-run-card" style="border-color:var(--warn)"><strong>語言提醒</strong><p class="hint">目前選擇 ${escapeHtml(langDisplay(info.selected))}，但內容看起來像 ${escapeHtml(langDisplay(info.inferred))}。本助手先用推斷語言產生檔名與命令。</p></div>`
+      : "";
+    openModal("本地執行助手", `
+      <div class="local-run-panel">
+        <div class="local-run-grid">
+          <div class="local-run-card"><strong>目前段落</strong><span>第 ${state.currentPiece + 1} 段｜${code.split("\n").length} 行</span></div>
+          <div class="local-run-card"><strong>建議語言</strong><span>${escapeHtml(langDisplay(info.lang))}</span></div>
+          <div class="local-run-card"><strong>檔名</strong><span>${escapeHtml(filename)}</span></div>
+          ${warning}
+        </div>
+        <p class="hint">GitHub Pages 是純前端頁面，不能直接啟動本機編譯器、MiKTeX 或 VS Code。請下載目前段落後，在本機終端執行下列命令；若要真正一鍵執行，需要下一步做本地 helper 或桌面版包裝。</p>
+        <pre class="command-block">${escapeHtml(commands.join("\n"))}</pre>
+        <div class="row">
+          <button class="primary" id="downloadRunnableInline">下載目前程式檔</button>
+          <button id="copyRunCommandInline">複製執行命令</button>
+          <button id="copyCurrentCodeInline">複製目前段落</button>
+        </div>
+      </div>`);
+    $("downloadRunnableInline")?.addEventListener("click", downloadCurrentRunnable);
+    $("copyRunCommandInline")?.addEventListener("click", () => copyText(commands.join("\n")));
+    $("copyCurrentCodeInline")?.addEventListener("click", () => copyText(code));
+    setView("run");
   }
 
   function runIntegration() {
@@ -1941,24 +2110,32 @@ ${latexBlock}
 
   function browserSafeCheck() {
     const p = project();
-    const lang = p.language !== "auto" ? p.language : (p.codeLangs.find(Boolean) || "text");
+    const code = currentRunnableCode();
+    const info = resolveRunnableLanguage();
+    const lang = info.lang;
     const rows = scanDependencies(false);
     const missing = rows.filter(r => r.status === "missing");
     const lines = [
       "Lavid HTML 瀏覽器安全檢查",
       "",
       `專案：${state.currentProject}`,
-      `語言判斷：${langDisplay(lang)}`,
+      `使用者選擇：${langDisplay(info.selected)}`,
+      `內容推斷：${info.inferred ? langDisplay(info.inferred) : "尚無明確特徵"}`,
+      `建議語言：${langDisplay(lang)}`,
       `Code blocks：${p.codeBlocks.length}`,
       `導入資源：${p.resources.length}`,
       `依賴掃描：${rows.length} 筆；缺少：${missing.length} 個`,
       "",
     ];
+    if (info.mismatch) {
+      lines.push(`語言提醒：目前選擇 ${langDisplay(info.selected)}，但這段內容看起來像 ${langDisplay(info.inferred)}。建議改回 auto 或改選 ${langDisplay(info.inferred)}。`);
+      lines.push("");
+    }
     if (lang === "json") {
-      try { JSON.parse(p.codeBlocks.join("\n")); lines.push("JSON parse：成功"); }
+      try { JSON.parse(code); lines.push("JSON parse：成功"); }
       catch (e) { lines.push("JSON parse：失敗｜" + e.message); }
     } else if (lang === "javascript" || lang === "typescript") {
-      try { new Function(p.codeBlocks.join("\n")); lines.push("JavaScript syntax：成功"); }
+      try { new Function(code); lines.push("JavaScript syntax：成功"); }
       catch (e) { lines.push("JavaScript syntax：失敗｜" + e.message); }
     } else if (lang === "html") {
       lines.push("HTML：可用 HTML 預覽檢查畫面。");
@@ -1968,7 +2145,7 @@ ${latexBlock}
     $("runText").value = lines.join("\n") + "\n";
     setView("run");
     syncEditors();
-    setStatus("瀏覽器安全檢查完成。");
+    setStatus(info.mismatch ? `語言提醒：選擇 ${langDisplay(info.selected)}，但內容像 ${langDisplay(info.inferred)}。` : "瀏覽器安全檢查完成。");
   }
 
   function previewHtmlFromCode() {
@@ -1995,7 +2172,8 @@ ${latexBlock}
   function downloadPiece() {
     const blocks = activeBlocks();
     if (!blocks.length) return;
-    download(`${$("exportName").value || "lavid"}_piece_${state.currentPiece + 1}.txt`, blocks[state.currentPiece] || "");
+    const info = resolveRunnableLanguage();
+    download(`${$("exportName").value || "lavid"}_piece_${state.currentPiece + 1}${fileExtForLang(info.lang)}`, blocks[state.currentPiece] || "");
   }
 
   function downloadSession() {
@@ -2146,6 +2324,7 @@ ${latexBlock}
     ["資源掃描", () => { scanDependencies(true); setView("deps"); }],
     ["HTML 依賴報告", previewHtmlReport],
     ["瀏覽器安全檢查", browserSafeCheck],
+    ["本地執行助手", openLocalRunAssistant],
     ["下載整合", downloadCombined],
     ["儲存 Session", downloadSession],
     ["新增專案", newProject],
@@ -2187,6 +2366,7 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
             <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">F</span> 搜尋</strong><span>搜尋輸入、輸出與執行資訊。</span></div>
             <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">K</span> 命令面板</strong><span>快速呼叫 RUN、匯入、掃描、專案與說明。</span></div>
             <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">B</span> 檢查</strong><span>執行瀏覽器安全檢查。</span></div>
+            <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">Alt</span> + <span class="kbd">R</span> 本地執行</strong><span>開啟本地執行助手，下載目前段落並複製命令。</span></div>
             <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">S</span> 儲存</strong><span>下載目前整合輸出。</span></div>
             <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">N</span> 新專案</strong><span>開新工作專案或圖層。</span></div>
             <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">Z</span> 還原</strong><span>還原最近刪除動作。</span></div>
@@ -2263,6 +2443,9 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
     });
     $("outputText").addEventListener("input", syncEditors);
     $("runText").addEventListener("input", syncEditors);
+    bindEditorScroll("inputText", "inputLines");
+    bindEditorScroll("outputText", "outputLines");
+    bindEditorScroll("runText", "runLines");
     $("pieceSelect").addEventListener("change", e => { state.currentPiece = Number(e.target.value) || 0; renderOutput(); });
     $("themeSelect").addEventListener("change", e => { state.theme = e.target.value; document.documentElement.dataset.theme = state.theme === "light" ? "light" : "dark"; saveLocal(); });
     $("projectSelect").addEventListener("change", e => { state.currentProject = e.target.value; renderAll(); saveLocal(); });
@@ -2284,7 +2467,7 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
       searchBtn: search, commandBtn: openCommand, runBtn: runIntegration, copyOutputBtn: () => copyText($("outputText").value),
       newProjectBtn: newProject, renameProjectBtn: renameProject, deleteProjectBtn: deleteProject, undoBtn: undo,
       saveSessionBtn: downloadSession, resetSessionBtn: () => { if (confirm("清空目前 HTML session？")) { localStorage.removeItem("lavid-html-state"); location.reload(); } },
-      checkBtn: browserSafeCheck, browserRunBtn: browserSafeCheck, dependencyBtn: () => { scanDependencies(true); setView("deps"); }, dependencyHtmlBtn: previewHtmlReport,
+      checkBtn: browserSafeCheck, browserRunBtn: browserSafeCheck, localRunRibbonBtn: openLocalRunAssistant, dependencyBtn: () => { scanDependencies(true); setView("deps"); }, dependencyHtmlBtn: previewHtmlReport,
       prevPieceBtn: () => { state.currentPiece = Math.max(0, state.currentPiece - 1); renderOutput(); },
       nextPieceBtn: () => { state.currentPiece = Math.min(activeBlocks().length - 1, state.currentPiece + 1); renderOutput(); },
       toggleModeBtn: () => { state.outputMode = state.outputMode === "piece" ? "combined" : "piece"; renderOutput(); },
@@ -2292,8 +2475,8 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
       downloadCombinedBtn: downloadCombined, downloadPieceBtn: downloadPiece, downloadReportBtn: () => download("lavid_dependency_report.html", dependencyHtml(), "text/html;charset=utf-8"), downloadProjectReportBtn: downloadProjectReport, downloadSessionBtn: downloadSession,
       resourceImportBtn: fileOpen, resourcePreviewBtn: previewResource, resourceDeleteBtn: deleteSelectedResource,
       scanBtn: () => scanDependencies(true), htmlReportBtn: previewHtmlReport,
-      safeCheckBtn: browserSafeCheck, runHtmlPreviewBtn: previewHtmlFromCode,
-      copyPieceBtn: () => copyText($("outputText").value), savePieceBtn: downloadPiece, restoreOriginalBtn: restoreOriginalPieces, splitBtn: splitPieces,
+      safeCheckBtn: browserSafeCheck, runHtmlPreviewBtn: previewHtmlFromCode, localRunBtn: openLocalRunAssistant,
+      copyPieceBtn: () => copyText($("outputText").value), savePieceBtn: downloadPiece, localRunCodeBtn: openLocalRunAssistant, restoreOriginalBtn: restoreOriginalPieces, splitBtn: splitPieces,
       helpBtn: showHelp, modalClose: closeModal, commandClose: closeCommand,
     })) {
       const el = $(id);
@@ -2306,6 +2489,7 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
       if (e.key === "F1") { e.preventDefault(); showHelp(); }
       if (e.key === "F5") { e.preventDefault(); runIntegration(); }
       if (e.ctrlKey && e.key.toLowerCase() === "b") { e.preventDefault(); browserSafeCheck(); }
+      if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "r") { e.preventDefault(); openLocalRunAssistant(); }
       if (e.ctrlKey && e.key.toLowerCase() === "k") { e.preventDefault(); openCommand(); }
       if (e.ctrlKey && e.key.toLowerCase() === "f") { e.preventDefault(); search(); }
       if (e.ctrlKey && e.key.toLowerCase() === "s") { e.preventDefault(); downloadCombined(); }
