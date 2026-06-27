@@ -1,0 +1,1578 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lavid HTML 1.0pre-h1 - AI Code Workspace</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --panel: #161b22;
+      --panel-2: #21262d;
+      --panel-3: #2a3039;
+      --panel-glass: rgba(15, 20, 29, .82);
+      --panel-glass-2: rgba(26, 32, 43, .72);
+      --panel-glass-3: rgba(36, 44, 58, .78);
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --primary: #2f81f7;
+      --primary-2: #1f6feb;
+      --accent: #39c5cf;
+      --ok: #2ea043;
+      --warn: #d29922;
+      --bad: #f85149;
+      --line: #30363d;
+      --code-bg: #0d1117;
+      --code-fg: #e6edf3;
+      --backdrop-image: url("assets/lavid-tech-background-p14.png");
+      --shadow: 0 18px 42px rgba(0, 0, 0, .34);
+      color-scheme: dark;
+    }
+
+    [data-theme="light"] {
+      --bg: #f6f8fa;
+      --panel: #ffffff;
+      --panel-2: #eaeef2;
+      --panel-3: #d8dee7;
+      --panel-glass: rgba(255, 255, 255, .86);
+      --panel-glass-2: rgba(246, 248, 250, .78);
+      --panel-glass-3: rgba(234, 238, 242, .82);
+      --text: #24292f;
+      --muted: #57606a;
+      --primary: #0969da;
+      --primary-2: #0550ae;
+      --accent: #1a7f37;
+      --ok: #1a7f37;
+      --warn: #9a6700;
+      --bad: #cf222e;
+      --line: #d0d7de;
+      --code-bg: #ffffff;
+      --code-fg: #24292f;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background:
+        linear-gradient(180deg, rgba(6, 10, 16, .72), rgba(6, 10, 16, .86)),
+        var(--backdrop-image) center / cover fixed no-repeat,
+        var(--bg);
+      color: var(--text);
+      font-family: "Microsoft JhengHei", "Segoe UI", system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(57, 197, 207, .06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(57, 197, 207, .045) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(circle at center, transparent 0 24%, #000 78%);
+      opacity: .55;
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, var(--panel-2), var(--panel));
+      color: var(--text);
+      border-radius: 8px;
+      min-height: 32px;
+      padding: 0 12px;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 6px 16px rgba(0,0,0,.14);
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: var(--primary);
+    }
+
+    button.primary {
+      border-color: var(--primary-2);
+      background: linear-gradient(180deg, var(--primary), var(--primary-2));
+      color: #fff;
+    }
+
+    button.accent {
+      border-color: #15929d;
+      background: linear-gradient(180deg, var(--accent), #0e7490);
+      color: #fff;
+    }
+
+    button.danger:hover { border-color: var(--bad); color: var(--bad); }
+    input, select {
+      min-height: 32px;
+      border: 1px solid var(--line);
+      background: var(--code-bg);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 0 8px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100%;
+      resize: none;
+      border: 1px solid var(--line);
+      background: var(--code-bg);
+      color: var(--code-fg);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      line-height: 1.45;
+      tab-size: 4;
+      outline: none;
+    }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 34px;
+      color: var(--primary);
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .quick {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .ribbon {
+      border: 1px solid var(--line);
+      background: var(--panel-glass);
+      backdrop-filter: blur(18px) saturate(1.12);
+      box-shadow: var(--shadow);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 2px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(3, 7, 12, .36);
+      padding-left: 4px;
+    }
+
+    .tab {
+      border-radius: 6px 6px 0 0;
+      border-bottom: none;
+      box-shadow: none;
+      min-width: 74px;
+    }
+
+    .tab.active {
+      background: var(--panel-glass);
+      color: var(--primary);
+      border-color: var(--line);
+    }
+
+    .ribbon-page {
+      display: none;
+      min-height: 92px;
+      padding: 8px;
+      gap: 8px;
+      overflow-x: auto;
+    }
+
+    .ribbon-page.active { display: flex; }
+
+    .group {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      min-width: max-content;
+      padding: 8px;
+      background: var(--panel-glass-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    }
+
+    .group-title {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .workspace {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(320px, 34%) 8px minmax(520px, 1fr);
+      gap: 0;
+    }
+
+    .resizer {
+      cursor: col-resize;
+      background: linear-gradient(90deg, transparent, var(--line), transparent);
+    }
+
+    .pane {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 8px;
+      background: var(--panel-glass);
+      border: 1px solid var(--line);
+      padding: 10px;
+      overflow: hidden;
+      backdrop-filter: blur(18px) saturate(1.08);
+      box-shadow: var(--shadow);
+    }
+
+    .pane-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      min-height: 28px;
+    }
+
+    .pane-title strong { color: var(--text); }
+    .hint { color: var(--muted); font-size: 12px; }
+
+    .editor-wrap {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--code-bg);
+    }
+
+    .lines {
+      padding: 10px 6px;
+      color: var(--muted);
+      font-family: Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.45;
+      border-right: 1px solid var(--line);
+      white-space: pre;
+      overflow: hidden;
+      text-align: right;
+      background: var(--panel-2);
+    }
+
+    .editor-wrap textarea {
+      border: none;
+      border-radius: 0;
+    }
+
+    .list {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      min-height: 88px;
+      overflow: auto;
+      background: var(--code-bg);
+    }
+
+    .list-item {
+      padding: 7px 9px;
+      border-bottom: 1px solid rgba(128,128,128,.18);
+      cursor: pointer;
+      color: var(--text);
+      font-size: 13px;
+      user-select: none;
+    }
+
+    .list-item:hover { background: rgba(47, 129, 247, .14); }
+    .list-item.selected { background: rgba(47, 129, 247, .28); outline: 1px solid var(--primary); }
+
+    .right {
+      grid-template-rows: auto auto 1fr;
+    }
+
+    .subtabs {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .subtab.active {
+      background: var(--panel-3);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .view {
+      min-height: 0;
+      display: none;
+    }
+
+    .view.active { display: grid; grid-template-rows: auto 1fr; gap: 8px; }
+    .view.fill-only.active { grid-template-rows: 1fr; }
+
+    .status {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      border: 1px solid var(--line);
+      background: var(--panel-glass-2);
+      backdrop-filter: blur(16px) saturate(1.08);
+      border-radius: 8px;
+      padding: 7px 10px;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .drop-active {
+      outline: 2px dashed var(--accent);
+      outline-offset: -6px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.55);
+      z-index: 20;
+    }
+
+    .modal-backdrop.active { display: flex; }
+
+    .modal {
+      width: min(860px, calc(100vw - 40px));
+      max-height: calc(100vh - 60px);
+      overflow: auto;
+      background: var(--panel-glass);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 14px;
+      backdrop-filter: blur(20px) saturate(1.12);
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .modal h2 { margin: 0; font-size: 18px; }
+    .preview {
+      min-height: 260px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: auto;
+      background: var(--code-bg);
+      display: grid;
+      place-items: center;
+      padding: 12px;
+    }
+
+    .preview img { max-width: 100%; max-height: 70vh; }
+    .preview iframe { width: 100%; height: 70vh; border: none; background: #fff; }
+    .preview pre { width: 100%; white-space: pre-wrap; color: var(--code-fg); }
+
+    .command {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      align-items: flex-start;
+      justify-content: center;
+      background: rgba(0,0,0,.45);
+      padding-top: 80px;
+    }
+
+    .command.active { display: flex; }
+    .command-box {
+      width: min(760px, calc(100vw - 40px));
+      background: var(--panel-glass);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 12px;
+      backdrop-filter: blur(20px) saturate(1.12);
+    }
+
+    .command-results {
+      margin-top: 8px;
+      max-height: 360px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 0 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      input, select { max-width: 100%; }
+      .app { height: auto; min-height: 100vh; max-width: 100vw; overflow-x: hidden; }
+      .topbar, .brand, .quick, .ribbon, .workspace, .pane {
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+      }
+      .topbar { flex-direction: column; align-items: stretch; }
+      .quick { justify-content: flex-start; }
+      .tabs { max-width: 100%; overflow-x: auto; }
+      .ribbon-page.active { flex-direction: column; overflow-x: visible; }
+      .group { min-width: 0; }
+      .group .row { align-items: stretch; }
+      .group .row > button,
+      .group .row > input,
+      .group .row > select { flex: 1 1 140px; }
+      .workspace { grid-template-columns: 1fr !important; gap: 10px; }
+      .pane-title, .subbar, .code-toolbar { flex-wrap: wrap; }
+      .editor-wrap { grid-template-columns: 52px minmax(0, 1fr); }
+      .resizer { display: none; }
+      .pane { min-height: 560px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="brand">
+      <h1>Lavid</h1>
+      <p>HTML 版 AI 程式碼工作區：專案、批次、擷取、分段、導入資源、依賴掃描與匯出。</p>
+    </div>
+    <div class="quick">
+      <button id="quickSave">存</button>
+      <button id="quickSearch">搜</button>
+      <button class="primary" id="quickRun">RUN</button>
+      <button id="quickCommand">命令</button>
+      <select id="themeSelect" title="Theme">
+        <option value="dark">專業石墨</option>
+        <option value="light">GitHub Light</option>
+      </select>
+    </div>
+  </header>
+
+  <section class="ribbon">
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-tab="home">常用</button>
+      <button class="tab" data-tab="project">專案</button>
+      <button class="tab" data-tab="run">執行 / 檢查</button>
+      <button class="tab" data-tab="export">匯出</button>
+      <button class="tab" data-tab="settings">設定</button>
+      <button class="tab" data-tab="help">說明</button>
+    </nav>
+    <div class="ribbon-page active" id="tab-home">
+      <div class="group">
+        <div class="group-title">剪貼與記錄</div>
+        <div class="row">
+          <button id="pasteBtn">貼上</button>
+          <button class="primary" id="captureBtn">記錄 Enter</button>
+          <button id="clearInputBtn">清空輸入</button>
+        </div>
+      </div>
+      <div class="group">
+        <div class="group-title">來源</div>
+        <div class="row">
+          <button id="openTextBtn">開文字/程式/資源</button>
+          <button class="accent" id="importBtn">導入檔案</button>
+          <button id="loadSessionBtn">載入 Session</button>
+        </div>
+      </div>
+      <div class="group">
+        <div class="group-title">搜尋與整合</div>
+        <div class="row">
+          <button id="searchBtn">搜尋 Ctrl+F</button>
+          <button id="commandBtn">命令 Ctrl+K</button>
+          <button class="primary" id="runBtn">RUN F5</button>
+          <button id="copyOutputBtn">複製輸出</button>
+        </div>
+      </div>
+    </div>
+    <div class="ribbon-page" id="tab-project">
+      <div class="group">
+        <div class="group-title">目前專案</div>
+        <div class="row">
+          <select id="projectSelect"></select>
+          <select id="projectLang"></select>
+        </div>
+      </div>
+      <div class="group">
+        <div class="group-title">管理</div>
+        <div class="row">
+          <button id="newProjectBtn">新增 Ctrl+N</button>
+          <button id="renameProjectBtn">改名</button>
+          <button class="danger" id="deleteProjectBtn">刪除</button>
+          <button id="undoBtn">還原 Ctrl+Z</button>
+        </div>
+      </div>
+      <div class="group">
+        <div class="group-title">Session</div>
+        <div class="row">
+          <button id="saveSessionBtn">儲存 JSON</button>
+          <button id="resetSessionBtn">新 Session</button>
+        </div>
+      </div>
+    </div>
+    <div class="ribbon-page" id="tab-run">
+      <div class="group">
+        <div class="group-title">檢查 / 預覽</div>
+        <div class="row">
+          <button id="checkBtn">檢查 Ctrl+B</button>
+          <button class="accent" id="browserRunBtn">瀏覽器安全檢查</button>
+          <button id="dependencyBtn">資源掃描</button>
+          <button id="dependencyHtmlBtn">HTML 報告</button>
+        </div>
+      </div>
+      <div class="group">
+        <div class="group-title">分段</div>
+        <div class="row">
+          <button id="prevPieceBtn">上一段</button>
+          <button id="nextPieceBtn">下一段</button>
+          <button id="toggleModeBtn">切換模式</button>
+          <button class="danger" id="deletePieceBtn">刪除本段</button>
+        </div>
+      </div>
+    </div>
+    <div class="ribbon-page" id="tab-export">
+      <div class="group">
+        <div class="group-title">輸出</div>
+        <div class="row">
+          <button class="primary" id="downloadCombinedBtn">下載整合</button>
+          <button id="downloadPieceBtn">下載本段</button>
+          <button id="downloadReportBtn">下載 HTML 報告</button>
+          <button id="downloadSessionBtn">下載 Session</button>
+        </div>
+      </div>
+      <div class="group">
+        <div class="group-title">格式</div>
+        <div class="row">
+          <select id="exportFormat">
+            <option value="auto">依語言</option>
+            <option value="md">Markdown</option>
+            <option value="txt">Text</option>
+            <option value="json">JSON</option>
+            <option value="html">HTML</option>
+          </select>
+          <input id="exportName" value="lavid_export" aria-label="export name">
+        </div>
+      </div>
+    </div>
+    <div class="ribbon-page" id="tab-settings">
+      <div class="group">
+        <div class="group-title">工作習慣</div>
+        <div class="row">
+          <label class="badge"><input type="checkbox" id="autoClear" checked> 記錄後清空</label>
+          <label class="badge"><input type="checkbox" id="includeSeparator" checked> 分隔註解</label>
+          <label class="badge"><input type="checkbox" id="autoSave" checked> localStorage</label>
+        </div>
+      </div>
+      <div class="group">
+        <div class="group-title">瀏覽器限制</div>
+        <div class="hint">純 HTML 不能直接呼叫本機 Python/C/LaTeX 編譯器；可擷取、掃描、預覽、匯出，真編譯需要本地後端或桌面版。</div>
+      </div>
+    </div>
+    <div class="ribbon-page" id="tab-help">
+      <div class="group">
+        <div class="group-title">快捷鍵</div>
+        <div class="row">
+          <button id="helpBtn">顯示 F1</button>
+          <span class="badge">Ctrl+F 搜尋</span>
+          <span class="badge">Ctrl+K 命令</span>
+          <span class="badge">Ctrl+S 下載</span>
+          <span class="badge">Enter 記錄</span>
+          <span class="badge">Delete 刪除</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main class="workspace" id="workspace">
+    <section class="pane" id="leftPane">
+      <div class="pane-title">
+        <strong>本次 AI 回覆 / 素材</strong>
+        <span class="hint">Enter / Ctrl+Enter 記錄，Shift+Enter 換行；可拖檔進來</span>
+      </div>
+      <div class="row">
+        <span>專案</span><select id="leftProjectSelect"></select>
+        <span>語言</span><select id="leftLangSelect"></select>
+        <span class="hint" id="sessionSummary">0 次記錄｜0 段 code</span>
+      </div>
+      <div class="editor-wrap">
+        <pre class="lines" id="inputLines">1</pre>
+        <textarea id="inputText" spellcheck="false"></textarea>
+      </div>
+      <div>
+        <div class="pane-title"><strong>已記錄批次</strong><span class="hint">Delete / Backspace 刪除，Ctrl+Z 還原</span></div>
+        <div class="list" id="captureList"></div>
+      </div>
+    </section>
+    <div class="resizer" id="resizer" title="Resize"></div>
+    <section class="pane right" id="rightPane">
+      <div class="pane-title">
+        <strong>輸出區</strong>
+        <span class="hint" id="pieceInfo">尚未 RUN</span>
+      </div>
+      <div class="subtabs" id="subtabs">
+        <button class="subtab active" data-view="code">程式碼 / Code</button>
+        <button class="subtab" data-view="resources">導入資源</button>
+        <button class="subtab" data-view="deps">依賴掃描</button>
+        <button class="subtab" data-view="run">執行/檢查</button>
+        <select id="pieceSelect" aria-label="piece select"></select>
+      </div>
+      <div class="view active" id="view-code">
+        <div class="row">
+          <button id="copyPieceBtn">複製本段</button>
+          <button id="savePieceBtn">下載本段</button>
+          <button class="danger" id="deletePieceBtn2">刪除本段</button>
+          <button id="restoreOriginalBtn">回原始分段</button>
+          <label class="badge">分段數 <input id="splitCount" type="number" value="8" min="1" max="64" style="width:70px"></label>
+          <button id="splitBtn">等分分段</button>
+        </div>
+        <div class="editor-wrap">
+          <pre class="lines" id="outputLines">1</pre>
+          <textarea id="outputText" spellcheck="false"></textarea>
+        </div>
+      </div>
+      <div class="view" id="view-resources">
+        <div class="row">
+          <button class="accent" id="resourceImportBtn">導入檔案</button>
+          <button id="resourcePreviewBtn">預覽資源</button>
+          <button class="danger" id="resourceDeleteBtn">刪除選取</button>
+          <span class="hint" id="resourceSummary">導入資源：0 個</span>
+        </div>
+        <div class="list" id="resourceList"></div>
+      </div>
+      <div class="view" id="view-deps">
+        <div class="row">
+          <button id="scanBtn">重新掃描</button>
+          <button id="htmlReportBtn">HTML 報告</button>
+          <span class="hint" id="depSummary">尚未掃描</span>
+        </div>
+        <div class="list" id="dependencyList"></div>
+      </div>
+      <div class="view" id="view-run">
+        <div class="row">
+          <button id="safeCheckBtn">瀏覽器安全檢查</button>
+          <button id="runHtmlPreviewBtn">HTML 預覽</button>
+          <span class="hint">本頁不會呼叫本機編譯器</span>
+        </div>
+        <div class="editor-wrap">
+          <pre class="lines" id="runLines">1</pre>
+          <textarea id="runText" readonly spellcheck="false"></textarea>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="status">
+    <span id="statusText">就緒。</span>
+    <span class="hint">Ctrl+K 命令｜Ctrl+F 搜尋｜F1 說明</span>
+  </footer>
+</div>
+
+<input type="file" id="fileInput" multiple hidden>
+<input type="file" id="sessionInput" accept="application/json,.json" hidden>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">Preview</h2>
+      <button id="modalClose">關閉 Esc</button>
+    </div>
+    <div id="modalBody" class="preview"></div>
+  </div>
+</div>
+
+<div class="command" id="commandPalette">
+  <div class="command-box">
+    <div class="row">
+      <input id="commandInput" placeholder="搜尋命令..." style="flex:1">
+      <button id="commandClose">關閉</button>
+    </div>
+    <div class="command-results" id="commandResults"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const APP_VERSION = "Lavid HTML 1.0pre-h1";
+  const LANGS = ["auto","python","c","cpp","matlab","latex","javascript","typescript","java","csharp","bash","powershell","html","css","sql","json","yaml","markdown","text"];
+  const DIRECT_LANGS = new Set(["python","c","cpp","matlab","latex","javascript","typescript","java","csharp","bash","powershell","html","css","sql"]);
+  const ASSET_EXTS = new Set([".png",".jpg",".jpeg",".gif",".webp",".bmp",".svg",".ico",".pdf",".csv",".xlsx",".xls",".docx",".pptx",".wav",".mp3",".mp4"]);
+  const EXT_LANG = {
+    ".py":"python",".c":"c",".cpp":"cpp",".cc":"cpp",".cxx":"cpp",".h":"cpp",".hpp":"cpp",
+    ".m":"matlab",".tex":"latex",".bib":"latex",".sty":"latex",".cls":"latex",
+    ".js":"javascript",".ts":"typescript",".java":"java",".cs":"csharp",".sh":"bash",".ps1":"powershell",
+    ".html":"html",".htm":"html",".css":"css",".sql":"sql",".json":"json",".yaml":"yaml",".yml":"yaml",".md":"markdown",".txt":"text"
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const now = () => new Date().toLocaleString("zh-TW", { hour12: false });
+  const uid = (prefix) => `${prefix}${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const extOf = (name) => {
+    const m = String(name || "").toLowerCase().match(/\.[^.\\/]+$/);
+    return m ? m[0] : "";
+  };
+  const langForFile = (name) => EXT_LANG[extOf(name)] || "text";
+  const langDisplay = (lang) => ({
+    python:"Python", c:"C", cpp:"C++", matlab:"MATLAB", latex:"LaTeX", javascript:"JavaScript",
+    typescript:"TypeScript", java:"Java", csharp:"C#", bash:"Shell", powershell:"PowerShell",
+    html:"HTML", css:"CSS", sql:"SQL", json:"JSON", yaml:"YAML", markdown:"Markdown", text:"Text"
+  })[lang] || lang || "Text";
+  const fenceLang = (lang) => lang === "cpp" ? "cpp" : (lang === "latex" ? "tex" : lang);
+
+  const state = {
+    currentProject: "Project A",
+    projects: {},
+    undo: [],
+    search: { query: "", matches: [], index: -1 },
+    selectedCapture: -1,
+    selectedResource: -1,
+    outputMode: "piece",
+    activeBlocks: null,
+    activeLangs: null,
+    currentPiece: 0,
+    dependencyRows: [],
+    theme: "dark",
+  };
+
+  function emptyProject(name = "Project A") {
+    return {
+      name,
+      language: "auto",
+      captures: [],
+      codeBlocks: [],
+      codeLangs: [],
+      originalBlocks: [],
+      originalLangs: [],
+      resources: [],
+      inputText: "",
+    };
+  }
+
+  function project() {
+    if (!state.projects[state.currentProject]) state.projects[state.currentProject] = emptyProject(state.currentProject);
+    return state.projects[state.currentProject];
+  }
+
+  function setStatus(text) { $("statusText").textContent = text; }
+
+  function updateLineNumbers(textarea, lineEl) {
+    const lines = Math.max(1, textarea.value.split("\n").length);
+    lineEl.textContent = Array.from({ length: lines }, (_, i) => i + 1).join("\n");
+  }
+
+  function syncEditors() {
+    updateLineNumbers($("inputText"), $("inputLines"));
+    updateLineNumbers($("outputText"), $("outputLines"));
+    updateLineNumbers($("runText"), $("runLines"));
+  }
+
+  function saveLocal() {
+    if (!$("autoSave").checked) return;
+    try {
+      project().inputText = $("inputText").value;
+      localStorage.setItem("lavid-html-state", JSON.stringify({ ...state, search: { query: "", matches: [], index: -1 } }));
+    } catch (e) {
+      setStatus("localStorage 儲存失敗，可能是資源檔太大。");
+    }
+  }
+
+  function loadLocal() {
+    try {
+      const raw = localStorage.getItem("lavid-html-state");
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      Object.assign(state, data);
+      state.search = { query: "", matches: [], index: -1 };
+      if (!state.projects || !Object.keys(state.projects).length) return false;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function codeBlockId(lang, code) {
+    return `${lang}:${code.trim()}`;
+  }
+
+  function extractFenced(text) {
+    const out = [];
+    const re = /```[ \t]*([A-Za-z0-9_+.\-#]*)[^\n]*\n([\s\S]*?)```/g;
+    let m;
+    while ((m = re.exec(text))) {
+      const raw = (m[1] || "").toLowerCase();
+      const lang = raw === "c++" ? "cpp" : (raw === "tex" ? "latex" : (raw || "text"));
+      out.push({ lang: LANGS.includes(lang) ? lang : "text", code: m[2].replace(/^\n+|\n+$/g, "") });
+    }
+    return out;
+  }
+
+  function cleanCode(code) {
+    return String(code || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n")
+      .filter(line => !line.trim().startsWith("```") && line.trim() !== "Copy code" && line.trim() !== "複製程式碼")
+      .join("\n").trim();
+  }
+
+  function addCapture(rawText, source = "手動輸入") {
+    const p = project();
+    const blocks = extractFenced(rawText);
+    const newIds = [];
+    let duplicate = 0;
+    const existing = new Set(p.codeBlocks.map((b, i) => codeBlockId(p.codeLangs[i], b)));
+    blocks.forEach(({ lang, code }) => {
+      const cleaned = cleanCode(code);
+      const key = codeBlockId(lang, cleaned);
+      if (!cleaned || existing.has(key)) { duplicate++; return; }
+      p.codeBlocks.push(cleaned);
+      p.codeLangs.push(lang);
+      p.originalBlocks = p.codeBlocks.slice();
+      p.originalLangs = p.codeLangs.slice();
+      newIds.push(key);
+      existing.add(key);
+    });
+    p.captures.push({
+      id: uid("CAP"),
+      time: now(),
+      source,
+      rawChars: rawText.length,
+      newCodeBlocks: newIds.length,
+      duplicateCodeBlocks: duplicate,
+      rawText,
+    });
+    if ($("autoClear").checked) $("inputText").value = "";
+    state.currentPiece = Math.max(0, p.codeBlocks.length - 1);
+    renderAll();
+    setStatus(`已記錄批次：新增 ${newIds.length} 段 code，重複 ${duplicate} 段。`);
+    saveLocal();
+  }
+
+  function captureInput() {
+    const text = $("inputText").value;
+    if (!text.trim()) { setStatus("沒有輸入內容。"); return; }
+    project().inputText = text;
+    addCapture(text, "手動輸入");
+  }
+
+  function addDirectCode(text, name) {
+    const lang = langForFile(name);
+    const block = cleanCode(text);
+    if (!block) return;
+    const p = project();
+    const key = codeBlockId(lang, block);
+    const existing = new Set(p.codeBlocks.map((b, i) => codeBlockId(p.codeLangs[i], b)));
+    let newCount = 0, duplicate = 0;
+    if (existing.has(key)) duplicate = 1;
+    else {
+      p.codeBlocks.push(block);
+      p.codeLangs.push(lang);
+      p.originalBlocks = p.codeBlocks.slice();
+      p.originalLangs = p.codeLangs.slice();
+      newCount = 1;
+    }
+    p.captures.push({ id: uid("CAP"), time: now(), source: `匯入 ${langDisplay(lang)}：${name}`, rawChars: text.length, newCodeBlocks: newCount, duplicateCodeBlocks: duplicate, rawText: text });
+    state.currentPiece = Math.max(0, p.codeBlocks.length - 1);
+  }
+
+  function resourceKind(file) {
+    const ext = extOf(file.name);
+    if (ASSET_EXTS.has(ext)) return "asset";
+    const lang = langForFile(file.name);
+    return DIRECT_LANGS.has(lang) ? "code" : "text";
+  }
+
+  function readFile(file, asDataUrl = false) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(reader.error);
+      reader.onload = () => resolve(reader.result);
+      if (asDataUrl) reader.readAsDataURL(file);
+      else reader.readAsText(file, "utf-8");
+    });
+  }
+
+  async function importFiles(files, route = "auto") {
+    const p = project();
+    let imported = 0, captured = 0;
+    for (const file of files) {
+      const kind = resourceKind(file);
+      const dataUrl = await readFile(file, true);
+      const res = {
+        id: uid("RES"),
+        name: file.name,
+        kind,
+        lang: langForFile(file.name),
+        size: file.size,
+        type: file.type,
+        dataUrl,
+        importedAt: now(),
+      };
+      p.resources.push(res);
+      imported++;
+      const direct = route === "output" && kind === "code";
+      if (direct) {
+        const text = await readFile(file, false);
+        addDirectCode(text, file.name);
+        captured++;
+      } else if (kind === "asset") {
+        const note = `導入資源：${file.name}\n類型：${file.type || extOf(file.name)}\n大小：${formatBytes(file.size)}\n`;
+        addCapture(note, `導入資源：${file.name}`);
+        captured++;
+      } else {
+        const text = await readFile(file, false);
+        const lang = langForFile(file.name);
+        const wrapped = lang === "text" || lang === "markdown" ? text : `\`\`\`${fenceLang(lang)}\n${text.trim()}\n\`\`\``;
+        addCapture(wrapped, `導入檔案：${file.name}`);
+        captured++;
+      }
+    }
+    renderAll();
+    setStatus(`已導入 ${imported} 個檔案，形成 ${captured} 筆批次/程式碼記錄。`);
+    saveLocal();
+  }
+
+  function formatBytes(size) {
+    const units = ["B", "KB", "MB", "GB"];
+    let value = Number(size) || 0;
+    for (const unit of units) {
+      if (value < 1024 || unit === "GB") return unit === "B" ? `${value|0} B` : `${value.toFixed(1)} ${unit}`;
+      value /= 1024;
+    }
+    return `${size} B`;
+  }
+
+  function buildCombined() {
+    const p = project();
+    if (!$("includeSeparator").checked) return p.codeBlocks.join("\n\n\n").trim() + "\n";
+    return p.codeBlocks.map((block, i) => [
+      "# ============================================================",
+      `# lavid 擷取程式碼區塊 ${i + 1}｜${langDisplay(p.codeLangs[i])}`,
+      "# ============================================================",
+      "",
+      block
+    ].join("\n")).join("\n\n\n").trim() + "\n";
+  }
+
+  function activeBlocks() {
+    return state.activeBlocks || project().codeBlocks;
+  }
+
+  function activeLangs() {
+    return state.activeLangs || project().codeLangs;
+  }
+
+  function runIntegration() {
+    const p = project();
+    state.activeBlocks = null;
+    state.activeLangs = null;
+    state.outputMode = "piece";
+    state.currentPiece = Math.min(state.currentPiece, Math.max(0, p.codeBlocks.length - 1));
+    renderOutput();
+    setView("code");
+    setStatus(`RUN 完成：${p.codeBlocks.length} 段 code。`);
+  }
+
+  function renderOutput() {
+    const blocks = activeBlocks();
+    const langs = activeLangs();
+    const output = $("outputText");
+    const select = $("pieceSelect");
+    select.innerHTML = "";
+    if (!blocks.length) {
+      output.value = "";
+      $("pieceInfo").textContent = "尚未 RUN";
+      syncEditors();
+      return;
+    }
+    blocks.forEach((block, i) => {
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = `第 ${i + 1} 段｜${langDisplay(langs[i])}｜${block.split("\n").length} 行`;
+      select.appendChild(opt);
+    });
+    state.currentPiece = Math.max(0, Math.min(state.currentPiece, blocks.length - 1));
+    select.value = String(state.currentPiece);
+    if (state.outputMode === "combined") {
+      output.value = buildCombined();
+      $("pieceInfo").textContent = `整合模式：${project().codeBlocks.length} 段`;
+    } else {
+      output.value = blocks[state.currentPiece] || "";
+      $("pieceInfo").textContent = `分段模式：第 ${state.currentPiece + 1} / ${blocks.length} 段`;
+    }
+    syncEditors();
+  }
+
+  function splitPieces() {
+    const count = Math.max(1, Math.min(64, Number($("splitCount").value) || 8));
+    const combined = project().codeBlocks.join("\n\n");
+    if (!combined.trim()) return;
+    const lines = combined.split("\n");
+    const per = Math.ceil(lines.length / count);
+    state.activeBlocks = [];
+    state.activeLangs = [];
+    for (let i = 0; i < count; i++) {
+      const part = lines.slice(i * per, (i + 1) * per).join("\n").trim();
+      if (part) {
+        state.activeBlocks.push(part);
+        state.activeLangs.push("text");
+      }
+    }
+    state.currentPiece = 0;
+    state.outputMode = "piece";
+    renderOutput();
+    setStatus(`已建立等分分段：${state.activeBlocks.length} 段。`);
+  }
+
+  function restoreOriginalPieces() {
+    state.activeBlocks = null;
+    state.activeLangs = null;
+    state.currentPiece = 0;
+    renderOutput();
+    setStatus("已回到原始擷取分段。");
+  }
+
+  function deleteCurrentPiece() {
+    const p = project();
+    if (!p.codeBlocks.length) return;
+    state.undo.push(JSON.stringify(p));
+    const index = Math.max(0, Math.min(state.currentPiece, p.codeBlocks.length - 1));
+    p.codeBlocks.splice(index, 1);
+    p.codeLangs.splice(index, 1);
+    p.originalBlocks = p.codeBlocks.slice();
+    p.originalLangs = p.codeLangs.slice();
+    state.currentPiece = Math.max(0, index - 1);
+    renderAll();
+    setStatus("已刪除目前分段，Ctrl+Z 可還原。");
+    saveLocal();
+  }
+
+  function undo() {
+    const raw = state.undo.pop();
+    if (!raw) { setStatus("沒有可還原項目。"); return; }
+    state.projects[state.currentProject] = JSON.parse(raw);
+    renderAll();
+    setStatus("已還原。");
+    saveLocal();
+  }
+
+  function deleteSelectedCapture() {
+    const p = project();
+    if (state.selectedCapture < 0) return;
+    state.undo.push(JSON.stringify(p));
+    p.captures.splice(state.selectedCapture, 1);
+    state.selectedCapture = -1;
+    renderAll();
+    setStatus("已刪除批次。注意：HTML 版批次刪除不反推移除 code block，請用刪除分段精準處理。");
+    saveLocal();
+  }
+
+  function deleteSelectedResource() {
+    const p = project();
+    if (state.selectedResource < 0) return;
+    p.resources.splice(state.selectedResource, 1);
+    state.selectedResource = -1;
+    renderResources();
+    setStatus("已刪除導入資源。");
+    saveLocal();
+  }
+
+  function scanDependencies(show = true) {
+    const p = project();
+    const rows = [];
+    const imported = new Map();
+    p.resources.forEach(res => imported.set(res.name.toLowerCase(), res));
+    const patterns = [
+      /(?:open|Path|Image\.open|imread|imsave|read_csv|read_excel|VideoCapture)\s*\(\s*['"]([^'"]+)['"]/gi,
+      /(?:src|href)\s*=\s*['"]([^'"]+)['"]/gi,
+      /!\[[^\]]*\]\(([^)]+)\)/g,
+      /\\(?:includegraphics|input|include|bibliography)(?:\[[^\]]*\])?\{([^}]+)\}/g,
+      /url\(([^)]+)\)/gi,
+      /['"]([^'"]+\.(?:png|jpe?g|gif|webp|bmp|svg|ico|pdf|csv|json|ya?ml|txt|md|tex|bib|sty|cls|html|css|js))['"]/gi
+    ];
+    p.codeBlocks.forEach((block, piece) => {
+      const seen = new Set();
+      patterns.forEach(re => {
+        re.lastIndex = 0;
+        let m;
+        while ((m = re.exec(block))) {
+          const ref = String(m[1] || "").trim().replace(/^['"]|['"]$/g, "").split(/[?#]/)[0];
+          if (!ref || /^[a-z]+:\/\//i.test(ref) || seen.has(ref)) continue;
+          seen.add(ref);
+          const name = ref.split(/[\\/]/).pop().toLowerCase();
+          rows.push({ piece: piece + 1, lang: p.codeLangs[piece] || "text", reference: ref, status: imported.has(name) ? "imported" : "missing" });
+        }
+      });
+    });
+    state.dependencyRows = rows;
+    if (show) renderDependencies();
+    return rows;
+  }
+
+  function renderDependencies() {
+    const rows = state.dependencyRows.length ? state.dependencyRows : scanDependencies(false);
+    const list = $("dependencyList");
+    list.innerHTML = "";
+    if (!rows.length) {
+      list.innerHTML = `<div class="list-item">未偵測到明確本地資源引用。</div>`;
+    } else {
+      rows.forEach(row => {
+        const div = document.createElement("div");
+        div.className = "list-item";
+        div.innerHTML = `<span class="${row.status === "missing" ? "bad" : "ok"}">${row.status}</span>｜piece ${row.piece}｜${langDisplay(row.lang)}｜${escapeHtml(row.reference)}`;
+        list.appendChild(div);
+      });
+    }
+    const missing = rows.filter(r => r.status === "missing").length;
+    $("depSummary").textContent = `依賴 ${rows.length} 筆｜缺少 ${missing} 個`;
+    setStatus(`資源依賴掃描完成：缺少 ${missing} 個。`);
+  }
+
+  function dependencyHtml() {
+    const rows = scanDependencies(false);
+    const missing = rows.filter(r => r.status === "missing").length;
+    const tableRows = rows.length ? rows.map(row => `<tr><td>${row.piece}</td><td>${escapeHtml(langDisplay(row.lang))}</td><td>${escapeHtml(row.reference)}</td><td class="${row.status === "missing" ? "missing" : "ok"}">${row.status}</td></tr>`).join("\n") : `<tr><td colspan="4">未偵測到明確本地資源引用。</td></tr>`;
+    return `<!doctype html><html><head><meta charset="utf-8"><title>Lavid dependency report</title><style>body{font-family:'Microsoft JhengHei',Arial,sans-serif;margin:24px;background:#f6f8fa;color:#24292f}table{border-collapse:collapse;width:100%;background:#fff}td,th{border:1px solid #d0d7de;padding:8px;text-align:left}th{background:#eaeef2}.ok{color:#1a7f37;font-weight:bold}.missing{color:#cf222e;font-weight:bold}</style></head><body><h1>Lavid 資源依賴報告</h1><p>專案：${escapeHtml(state.currentProject)}｜時間：${now()}｜導入資源：${project().resources.length}｜缺少：${missing}</p><table><thead><tr><th>Piece</th><th>Language</th><th>Reference</th><th>Status</th></tr></thead><tbody>${tableRows}</tbody></table></body></html>`;
+  }
+
+  function previewHtmlReport() {
+    const htmlText = dependencyHtml();
+    openModal("HTML 依賴報告", `<iframe srcdoc="${escapeHtml(htmlText)}"></iframe>`);
+  }
+
+  function browserSafeCheck() {
+    const p = project();
+    const lang = p.language !== "auto" ? p.language : (p.codeLangs.find(Boolean) || "text");
+    const rows = scanDependencies(false);
+    const missing = rows.filter(r => r.status === "missing");
+    const lines = [
+      "Lavid HTML 瀏覽器安全檢查",
+      "",
+      `專案：${state.currentProject}`,
+      `語言判斷：${langDisplay(lang)}`,
+      `Code blocks：${p.codeBlocks.length}`,
+      `導入資源：${p.resources.length}`,
+      `依賴掃描：${rows.length} 筆；缺少：${missing.length} 個`,
+      "",
+    ];
+    if (lang === "json") {
+      try { JSON.parse(p.codeBlocks.join("\n")); lines.push("JSON parse：成功"); }
+      catch (e) { lines.push("JSON parse：失敗｜" + e.message); }
+    } else if (lang === "javascript" || lang === "typescript") {
+      try { new Function(p.codeBlocks.join("\n")); lines.push("JavaScript syntax：成功"); }
+      catch (e) { lines.push("JavaScript syntax：失敗｜" + e.message); }
+    } else if (lang === "html") {
+      lines.push("HTML：可用 HTML 預覽檢查畫面。");
+    } else {
+      lines.push("純 HTML 版不會呼叫本機 Python/C/LaTeX 編譯器。請用桌面版或未來本地後端執行。");
+    }
+    $("runText").value = lines.join("\n") + "\n";
+    setView("run");
+    syncEditors();
+    setStatus("瀏覽器安全檢查完成。");
+  }
+
+  function previewHtmlFromCode() {
+    const htmlBlock = project().codeBlocks.find((b, i) => project().codeLangs[i] === "html");
+    if (!htmlBlock) { setStatus("沒有 HTML code block 可預覽。"); return; }
+    openModal("HTML 預覽", `<iframe srcdoc="${escapeHtml(htmlBlock)}"></iframe>`);
+  }
+
+  function download(name, content, type = "text/plain;charset=utf-8") {
+    const blob = new Blob([content], { type });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 400);
+  }
+
+  function downloadCombined() {
+    const name = ($("exportName").value || "lavid_export") + ".txt";
+    download(name, buildCombined());
+  }
+
+  function downloadPiece() {
+    const blocks = activeBlocks();
+    if (!blocks.length) return;
+    download(`${$("exportName").value || "lavid"}_piece_${state.currentPiece + 1}.txt`, blocks[state.currentPiece] || "");
+  }
+
+  function downloadSession() {
+    project().inputText = $("inputText").value;
+    download(`lavid_html_session_${Date.now()}.json`, JSON.stringify({ app: "lavid-html", version: APP_VERSION, savedAt: now(), state }, null, 2), "application/json;charset=utf-8");
+  }
+
+  function loadSessionFile(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        Object.assign(state, data.state || data);
+        renderAll();
+        setStatus("Session 已載入。");
+      } catch (e) {
+        setStatus("Session 載入失敗：" + e.message);
+      }
+    };
+    reader.readAsText(file, "utf-8");
+  }
+
+  function renderProjectControls() {
+    const names = Object.keys(state.projects);
+    for (const id of ["projectSelect", "leftProjectSelect"]) {
+      const select = $(id);
+      select.innerHTML = "";
+      names.forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        select.appendChild(opt);
+      });
+      select.value = state.currentProject;
+    }
+    for (const id of ["projectLang", "leftLangSelect"]) {
+      const select = $(id);
+      select.innerHTML = "";
+      LANGS.forEach(lang => {
+        const opt = document.createElement("option");
+        opt.value = lang;
+        opt.textContent = lang;
+        select.appendChild(opt);
+      });
+      select.value = project().language || "auto";
+    }
+  }
+
+  function renderCaptures() {
+    const list = $("captureList");
+    list.innerHTML = "";
+    project().captures.forEach((cap, i) => {
+      const div = document.createElement("div");
+      div.className = "list-item" + (i === state.selectedCapture ? " selected" : "");
+      div.textContent = `${String(i + 1).padStart(3, "0")}. ${cap.time}｜${cap.source}｜新增 ${cap.newCodeBlocks || 0} 段｜${cap.rawChars || 0} 字元`;
+      div.onclick = () => { state.selectedCapture = i; renderCaptures(); };
+      list.appendChild(div);
+    });
+    $("sessionSummary").textContent = `${project().captures.length} 次記錄｜${project().codeBlocks.length} 段 code`;
+  }
+
+  function renderResources() {
+    const list = $("resourceList");
+    list.innerHTML = "";
+    const resources = project().resources;
+    resources.forEach((res, i) => {
+      const div = document.createElement("div");
+      div.className = "list-item" + (i === state.selectedResource ? " selected" : "");
+      div.textContent = `${String(i + 1).padStart(3, "0")}. [${res.kind}] ${res.name}｜${formatBytes(res.size)}`;
+      div.onclick = () => { state.selectedResource = i; renderResources(); };
+      div.ondblclick = () => previewResource();
+      list.appendChild(div);
+    });
+    $("resourceSummary").textContent = `導入資源：${resources.length} 個｜${formatBytes(resources.reduce((a, b) => a + (b.size || 0), 0))}`;
+  }
+
+  function previewResource() {
+    const res = project().resources[state.selectedResource];
+    if (!res) { setStatus("請先選取導入資源。"); return; }
+    const ext = extOf(res.name);
+    if (res.type.startsWith("image/") || [".png",".jpg",".jpeg",".gif",".webp",".bmp",".svg"].includes(ext)) {
+      openModal(`資源預覽 - ${res.name}`, `<img src="${res.dataUrl}" alt="${escapeHtml(res.name)}">`);
+      return;
+    }
+    if (ext === ".pdf") {
+      openModal(`PDF 預覽 - ${res.name}`, `<iframe src="${res.dataUrl}"></iframe>`);
+      return;
+    }
+    if (ext === ".html" || ext === ".htm") {
+      fetch(res.dataUrl).then(r => r.text()).then(text => openModal(`HTML 預覽 - ${res.name}`, `<iframe srcdoc="${escapeHtml(text)}"></iframe>`));
+      return;
+    }
+    fetch(res.dataUrl).then(r => r.text()).then(text => openModal(`資源預覽 - ${res.name}`, `<pre>${escapeHtml(text.slice(0, 200000))}</pre>`)).catch(() => {
+      openModal(`資源預覽 - ${res.name}`, `<p>此檔案類型無法在 HTML 版直接預覽。</p>`);
+    });
+  }
+
+  function renderAll() {
+    $("inputText").value = project().inputText || $("inputText").value || "";
+    renderProjectControls();
+    renderCaptures();
+    renderResources();
+    renderOutput();
+    renderDependencies();
+    syncEditors();
+  }
+
+  function openModal(title, html) {
+    $("modalTitle").textContent = title;
+    $("modalBody").innerHTML = html;
+    $("modalBackdrop").classList.add("active");
+  }
+
+  function closeModal() {
+    $("modalBackdrop").classList.remove("active");
+    $("modalBody").innerHTML = "";
+  }
+
+  function setRibbon(tab) {
+    document.querySelectorAll(".tab").forEach(btn => btn.classList.toggle("active", btn.dataset.tab === tab));
+    document.querySelectorAll(".ribbon-page").forEach(page => page.classList.toggle("active", page.id === `tab-${tab}`));
+  }
+
+  function setView(view) {
+    document.querySelectorAll(".subtab").forEach(btn => btn.classList.toggle("active", btn.dataset.view === view));
+    document.querySelectorAll(".view").forEach(el => el.classList.toggle("active", el.id === `view-${view}`));
+  }
+
+  function openCommand() {
+    $("commandPalette").classList.add("active");
+    $("commandInput").value = "";
+    renderCommands();
+    $("commandInput").focus();
+  }
+
+  function closeCommand() {
+    $("commandPalette").classList.remove("active");
+  }
+
+  const commands = [
+    ["記錄本次輸入", captureInput],
+    ["RUN 整合", runIntegration],
+    ["導入檔案", () => $("fileInput").click()],
+    ["資源掃描", () => { scanDependencies(true); setView("deps"); }],
+    ["HTML 依賴報告", previewHtmlReport],
+    ["瀏覽器安全檢查", browserSafeCheck],
+    ["下載整合", downloadCombined],
+    ["儲存 Session", downloadSession],
+    ["新增專案", newProject],
+    ["還原", undo],
+    ["說明", showHelp],
+  ];
+
+  function renderCommands() {
+    const q = $("commandInput").value.toLowerCase();
+    const box = $("commandResults");
+    box.innerHTML = "";
+    commands.filter(([name]) => name.toLowerCase().includes(q)).forEach(([name, fn]) => {
+      const div = document.createElement("div");
+      div.className = "list-item";
+      div.textContent = name;
+      div.onclick = () => { closeCommand(); fn(); };
+      box.appendChild(div);
+    });
+  }
+
+  function showHelp() {
+    openModal("快捷鍵說明", `<pre>Ctrl+F：搜尋
+Ctrl+K：命令面板
+Ctrl+S：下載整合
+Ctrl+N：新增專案
+Ctrl+Enter / Enter：記錄左側輸入
+Shift+Enter：左側換行
+F5：RUN 整合
+F1：快捷鍵說明
+Delete / Backspace：刪除選取批次或資源</pre>`);
+  }
+
+  function newProject() {
+    const name = prompt("專案名稱", `Project ${Object.keys(state.projects).length + 1}`);
+    if (!name) return;
+    if (state.projects[name]) { setStatus("專案已存在。"); return; }
+    state.projects[name] = emptyProject(name);
+    state.currentProject = name;
+    renderAll();
+    saveLocal();
+  }
+
+  function renameProject() {
+    const old = state.currentProject;
+    const name = prompt("新專案名稱", old);
+    if (!name || name === old) return;
+    if (state.projects[name]) { setStatus("專案已存在。"); return; }
+    state.projects[name] = state.projects[old];
+    state.projects[name].name = name;
+    delete state.projects[old];
+    state.currentProject = name;
+    renderAll();
+    saveLocal();
+  }
+
+  function deleteProject() {
+    const names = Object.keys(state.projects);
+    if (names.length <= 1) { setStatus("至少保留一個專案。"); return; }
+    if (!confirm(`刪除專案「${state.currentProject}」？`)) return;
+    delete state.projects[state.currentProject];
+    state.currentProject = Object.keys(state.projects)[0];
+    renderAll();
+    saveLocal();
+  }
+
+  function copyText(text) {
+    navigator.clipboard?.writeText(text).then(() => setStatus("已複製。")).catch(() => setStatus("瀏覽器拒絕剪貼簿操作。"));
+  }
+
+  function search() {
+    const q = prompt("搜尋關鍵字", state.search.query || "");
+    if (!q) return;
+    state.search.query = q;
+    const areas = [$("inputText"), $("outputText"), $("runText")];
+    const found = areas.find(area => area.value.toLowerCase().includes(q.toLowerCase()));
+    if (found) {
+      const i = found.value.toLowerCase().indexOf(q.toLowerCase());
+      found.focus();
+      found.setSelectionRange(i, i + q.length);
+      setStatus("已找到搜尋結果。");
+    } else setStatus("找不到搜尋結果。");
+  }
+
+  function initEvents() {
+    $("tabs").addEventListener("click", e => { if (e.target.dataset.tab) setRibbon(e.target.dataset.tab); });
+    $("subtabs").addEventListener("click", e => { if (e.target.dataset.view) setView(e.target.dataset.view); });
+    $("inputText").addEventListener("input", () => { project().inputText = $("inputText").value; syncEditors(); saveLocal(); });
+    $("inputText").addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); captureInput(); }
+    });
+    $("outputText").addEventListener("input", syncEditors);
+    $("runText").addEventListener("input", syncEditors);
+    $("pieceSelect").addEventListener("change", e => { state.currentPiece = Number(e.target.value) || 0; renderOutput(); });
+    $("themeSelect").addEventListener("change", e => { state.theme = e.target.value; document.documentElement.dataset.theme = state.theme === "light" ? "light" : "dark"; saveLocal(); });
+    $("projectSelect").addEventListener("change", e => { state.currentProject = e.target.value; renderAll(); saveLocal(); });
+    $("leftProjectSelect").addEventListener("change", e => { state.currentProject = e.target.value; renderAll(); saveLocal(); });
+    $("projectLang").addEventListener("change", e => { project().language = e.target.value; renderProjectControls(); saveLocal(); });
+    $("leftLangSelect").addEventListener("change", e => { project().language = e.target.value; renderProjectControls(); saveLocal(); });
+
+    const fileOpen = () => $("fileInput").click();
+    $("fileInput").addEventListener("change", e => importFiles([...e.target.files], "auto").finally(() => e.target.value = ""));
+    $("sessionInput").addEventListener("change", e => { const f = e.target.files[0]; if (f) loadSessionFile(f); e.target.value = ""; });
+
+    for (const [id, fn] of Object.entries({
+      quickSave: downloadCombined, quickSearch: search, quickRun: runIntegration, quickCommand: openCommand,
+      pasteBtn: async () => { try { $("inputText").value = await navigator.clipboard.readText(); project().inputText = $("inputText").value; syncEditors(); } catch { setStatus("瀏覽器拒絕讀剪貼簿。"); } },
+      captureBtn: captureInput, clearInputBtn: () => { $("inputText").value = ""; project().inputText = ""; syncEditors(); saveLocal(); },
+      openTextBtn: fileOpen, importBtn: fileOpen, loadSessionBtn: () => $("sessionInput").click(),
+      searchBtn: search, commandBtn: openCommand, runBtn: runIntegration, copyOutputBtn: () => copyText($("outputText").value),
+      newProjectBtn: newProject, renameProjectBtn: renameProject, deleteProjectBtn: deleteProject, undoBtn: undo,
+      saveSessionBtn: downloadSession, resetSessionBtn: () => { if (confirm("清空目前 HTML session？")) { localStorage.removeItem("lavid-html-state"); location.reload(); } },
+      checkBtn: browserSafeCheck, browserRunBtn: browserSafeCheck, dependencyBtn: () => { scanDependencies(true); setView("deps"); }, dependencyHtmlBtn: previewHtmlReport,
+      prevPieceBtn: () => { state.currentPiece = Math.max(0, state.currentPiece - 1); renderOutput(); },
+      nextPieceBtn: () => { state.currentPiece = Math.min(activeBlocks().length - 1, state.currentPiece + 1); renderOutput(); },
+      toggleModeBtn: () => { state.outputMode = state.outputMode === "piece" ? "combined" : "piece"; renderOutput(); },
+      deletePieceBtn: deleteCurrentPiece, deletePieceBtn2: deleteCurrentPiece,
+      downloadCombinedBtn: downloadCombined, downloadPieceBtn: downloadPiece, downloadReportBtn: () => download("lavid_dependency_report.html", dependencyHtml(), "text/html;charset=utf-8"), downloadSessionBtn: downloadSession,
+      resourceImportBtn: fileOpen, resourcePreviewBtn: previewResource, resourceDeleteBtn: deleteSelectedResource,
+      scanBtn: () => scanDependencies(true), htmlReportBtn: previewHtmlReport,
+      safeCheckBtn: browserSafeCheck, runHtmlPreviewBtn: previewHtmlFromCode,
+      copyPieceBtn: () => copyText($("outputText").value), savePieceBtn: downloadPiece, restoreOriginalBtn: restoreOriginalPieces, splitBtn: splitPieces,
+      helpBtn: showHelp, modalClose: closeModal, commandClose: closeCommand,
+    })) {
+      const el = $(id);
+      if (el) el.addEventListener("click", fn);
+    }
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") { closeModal(); closeCommand(); }
+      if (e.key === "F1") { e.preventDefault(); showHelp(); }
+      if (e.key === "F5") { e.preventDefault(); runIntegration(); }
+      if (e.ctrlKey && e.key.toLowerCase() === "k") { e.preventDefault(); openCommand(); }
+      if (e.ctrlKey && e.key.toLowerCase() === "f") { e.preventDefault(); search(); }
+      if (e.ctrlKey && e.key.toLowerCase() === "s") { e.preventDefault(); downloadCombined(); }
+      if (e.ctrlKey && e.key.toLowerCase() === "n") { e.preventDefault(); newProject(); }
+      if (e.ctrlKey && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); }
+      if ((e.key === "Delete" || e.key === "Backspace") && document.activeElement === $("captureList")) deleteSelectedCapture();
+    });
+    $("commandInput").addEventListener("input", renderCommands);
+    $("commandInput").addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        const first = $("commandResults").querySelector(".list-item");
+        if (first) first.click();
+      }
+    });
+
+    const app = $("app");
+    app.addEventListener("dragover", e => { e.preventDefault(); app.classList.add("drop-active"); });
+    app.addEventListener("dragleave", () => app.classList.remove("drop-active"));
+    app.addEventListener("drop", e => {
+      e.preventDefault();
+      app.classList.remove("drop-active");
+      const route = $("rightPane").contains(document.elementFromPoint(e.clientX, e.clientY)) ? "output" : "auto";
+      importFiles([...e.dataTransfer.files], route);
+    });
+
+    let dragging = false;
+    $("resizer").addEventListener("mousedown", () => dragging = true);
+    window.addEventListener("mouseup", () => dragging = false);
+    window.addEventListener("mousemove", e => {
+      if (!dragging) return;
+      const rect = $("workspace").getBoundingClientRect();
+      const pct = Math.max(25, Math.min(55, ((e.clientX - rect.left) / rect.width) * 100));
+      $("workspace").style.gridTemplateColumns = `minmax(320px, ${pct}%) 8px minmax(520px, 1fr)`;
+    });
+  }
+
+  function boot() {
+    if (!loadLocal()) state.projects[state.currentProject] = emptyProject(state.currentProject);
+    document.documentElement.dataset.theme = state.theme === "light" ? "light" : "dark";
+    $("themeSelect").value = state.theme || "dark";
+    initEvents();
+    renderAll();
+    setStatus(`${APP_VERSION} 就緒。`);
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
