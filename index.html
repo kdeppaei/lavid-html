@@ -457,6 +457,127 @@
     .warn { color: var(--warn); }
     .bad { color: var(--bad); }
 
+    .auth-locked .app,
+    .auth-locked #modalBackdrop,
+    .auth-locked #commandPalette {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .auth-shell {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(57, 197, 207, .18), transparent 28%),
+        radial-gradient(circle at 82% 76%, rgba(47, 129, 247, .16), transparent 32%),
+        linear-gradient(180deg, rgba(4, 8, 14, .72), rgba(4, 8, 14, .9)),
+        var(--backdrop-image) center / cover fixed no-repeat,
+        var(--bg);
+    }
+
+    .auth-locked .auth-shell { display: flex; }
+
+    .auth-card {
+      width: min(440px, 100%);
+      border: 1px solid rgba(57, 197, 207, .28);
+      border-radius: 18px;
+      background: rgba(15, 20, 29, .78);
+      color: var(--text);
+      box-shadow: 0 28px 80px rgba(0,0,0,.46), inset 0 1px 0 rgba(255,255,255,.08);
+      backdrop-filter: blur(24px) saturate(1.14);
+      padding: 28px;
+    }
+
+    .auth-mark {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 22px;
+    }
+
+    .auth-logo {
+      font-size: 34px;
+      line-height: 1;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: 0;
+    }
+
+    .auth-chip {
+      border: 1px solid rgba(57, 197, 207, .28);
+      border-radius: 999px;
+      padding: 5px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      background: rgba(255,255,255,.04);
+    }
+
+    .auth-card h2 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    .auth-card p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    .auth-form,
+    .auth-field,
+    .auth-actions {
+      display: grid;
+      gap: 12px;
+    }
+
+    .auth-field { gap: 6px; }
+
+    .auth-field label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .auth-field input {
+      min-height: 42px;
+      border-radius: 10px;
+      background: rgba(13, 17, 23, .78);
+      border-color: rgba(139, 148, 158, .28);
+    }
+
+    .auth-social {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .auth-social button {
+      opacity: .58;
+      cursor: not-allowed;
+    }
+
+    .auth-note {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .auth-error {
+      min-height: 18px;
+      color: var(--bad);
+      font-size: 13px;
+    }
+
     @media (max-width: 900px) {
       body { overflow: auto; }
       input, select { max-width: 100%; }
@@ -483,7 +604,36 @@
     }
   </style>
 </head>
-<body>
+<body class="auth-locked">
+<section class="auth-shell" id="authShell" aria-live="polite">
+  <div class="auth-card">
+    <div class="auth-mark">
+      <div class="auth-logo">Lavid</div>
+      <div class="auth-chip">Local secure gate</div>
+    </div>
+    <h2 id="authTitle">設定登入密碼</h2>
+    <p id="authSubtitle">第一次使用請建立此裝置的 LAVID 密碼。之後登入成功會直接進入工作頁面，專案紀錄會保存在目前瀏覽器。</p>
+    <form class="auth-form" id="authForm">
+      <div class="auth-field">
+        <label for="authPassword">密碼</label>
+        <input id="authPassword" type="password" autocomplete="current-password" minlength="6" required>
+      </div>
+      <div class="auth-field" id="authConfirmWrap">
+        <label for="authConfirm">確認密碼</label>
+        <input id="authConfirm" type="password" autocomplete="new-password" minlength="6">
+      </div>
+      <div class="auth-error" id="authError"></div>
+      <div class="auth-actions">
+        <button class="primary" id="authSubmit" type="submit">建立並進入工作區</button>
+      </div>
+    </form>
+    <div class="auth-social">
+      <button type="button" title="需要後端 OAuth，純 GitHub Pages 尚未啟用">Google 登入</button>
+      <button type="button" title="需要後端 OAuth，純 GitHub Pages 尚未啟用">GitHub 登入</button>
+    </div>
+    <div class="auth-note">目前為純前端本機密碼保護：密碼雜湊保存在此瀏覽器，不會上傳。真正跨裝置帳號、Google/GitHub OAuth 與雲端專案同步，需要下一版接 Firebase、Supabase 或自架後端。</div>
+  </div>
+</section>
 <div class="app" id="app">
   <header class="topbar">
     <div class="brand">
@@ -495,6 +645,7 @@
       <button id="quickSearch">搜</button>
       <button class="primary" id="quickRun">RUN</button>
       <button id="quickCommand">命令</button>
+      <button id="logoutBtn" title="Lock workspace">登出</button>
       <select id="themeSelect" title="Theme">
         <option value="dark">專業石墨</option>
         <option value="light">GitHub Light</option>
@@ -748,6 +899,8 @@
   "use strict";
 
   const APP_VERSION = "Lavid HTML 1.0pre-h1";
+  const AUTH_KEY = "lavid-html-auth";
+  const AUTH_SESSION_KEY = "lavid-html-auth-ok";
   const LANGS = ["auto","python","c","cpp","matlab","latex","javascript","typescript","java","csharp","bash","powershell","html","css","sql","json","yaml","markdown","text"];
   const DIRECT_LANGS = new Set(["python","c","cpp","matlab","latex","javascript","typescript","java","csharp","bash","powershell","html","css","sql"]);
   const ASSET_EXTS = new Set([".png",".jpg",".jpeg",".gif",".webp",".bmp",".svg",".ico",".pdf",".csv",".xlsx",".xls",".docx",".pptx",".wav",".mp3",".mp4"]);
@@ -773,6 +926,100 @@
     html:"HTML", css:"CSS", sql:"SQL", json:"JSON", yaml:"YAML", markdown:"Markdown", text:"Text"
   })[lang] || lang || "Text";
   const fenceLang = (lang) => lang === "cpp" ? "cpp" : (lang === "latex" ? "tex" : lang);
+
+  const hexFromBytes = (bytes) => [...bytes].map(b => b.toString(16).padStart(2, "0")).join("");
+
+  function authRecord() {
+    try { return JSON.parse(localStorage.getItem(AUTH_KEY) || "null"); }
+    catch { return null; }
+  }
+
+  function randomSalt() {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return hexFromBytes(bytes);
+  }
+
+  async function passwordHash(password, salt) {
+    if (!crypto?.subtle) throw new Error("此瀏覽器不支援安全雜湊，請改用最新版 Chrome/Edge/Safari。");
+    const data = new TextEncoder().encode(`${salt}:${password}`);
+    const digest = await crypto.subtle.digest("SHA-256", data);
+    return hexFromBytes(new Uint8Array(digest));
+  }
+
+  function configureAuthPanel() {
+    const rec = authRecord();
+    const setupMode = !rec?.hash || !rec?.salt;
+    $("authForm").dataset.mode = setupMode ? "setup" : "login";
+    $("authTitle").textContent = setupMode ? "設定登入密碼" : "登入 Lavid";
+    $("authSubtitle").textContent = setupMode
+      ? "第一次使用請建立此裝置的 LAVID 密碼。之後登入成功會直接進入工作頁面，專案紀錄會保存在目前瀏覽器。"
+      : "輸入此裝置的 LAVID 密碼，登入後會載入保存在目前瀏覽器的專案紀錄。";
+    $("authConfirmWrap").style.display = setupMode ? "grid" : "none";
+    $("authConfirm").required = setupMode;
+    $("authSubmit").textContent = setupMode ? "建立並進入工作區" : "登入工作區";
+    $("authError").textContent = "";
+  }
+
+  function unlockWorkspace() {
+    sessionStorage.setItem(AUTH_SESSION_KEY, "1");
+    document.body.classList.remove("auth-locked");
+    setTimeout(() => $("inputText")?.focus(), 60);
+  }
+
+  function lockWorkspace() {
+    sessionStorage.removeItem(AUTH_SESSION_KEY);
+    document.body.classList.add("auth-locked");
+    configureAuthPanel();
+    setTimeout(() => $("authPassword")?.focus(), 60);
+  }
+
+  function initAuthGate() {
+    const form = $("authForm");
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const mode = form.dataset.mode || "login";
+      const password = $("authPassword").value;
+      const confirm = $("authConfirm").value;
+      $("authError").textContent = "";
+      if (password.length < 6) {
+        $("authError").textContent = "密碼至少需要 6 個字元。";
+        return;
+      }
+      if (mode === "setup") {
+        if (password !== confirm) {
+          $("authError").textContent = "兩次密碼輸入不一致。";
+          return;
+        }
+        try {
+          const salt = randomSalt();
+          const hash = await passwordHash(password, salt);
+          localStorage.setItem(AUTH_KEY, JSON.stringify({ salt, hash, createdAt: now() }));
+          $("authPassword").value = "";
+          $("authConfirm").value = "";
+          unlockWorkspace();
+        } catch (err) {
+          $("authError").textContent = err.message || "無法建立密碼。";
+        }
+        return;
+      }
+      try {
+        const rec = authRecord();
+        const hash = await passwordHash(password, rec.salt);
+        if (hash !== rec.hash) {
+          $("authError").textContent = "密碼不正確。";
+          return;
+        }
+        $("authPassword").value = "";
+        unlockWorkspace();
+      } catch (err) {
+        $("authError").textContent = err.message || "無法登入。";
+      }
+    });
+
+    if (authRecord() && sessionStorage.getItem(AUTH_SESSION_KEY) === "1") unlockWorkspace();
+    else lockWorkspace();
+  }
 
   const state = {
     currentProject: "Project A",
@@ -1499,7 +1746,7 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
     $("sessionInput").addEventListener("change", e => { const f = e.target.files[0]; if (f) loadSessionFile(f); e.target.value = ""; });
 
     for (const [id, fn] of Object.entries({
-      quickSave: downloadCombined, quickSearch: search, quickRun: runIntegration, quickCommand: openCommand,
+      quickSave: downloadCombined, quickSearch: search, quickRun: runIntegration, quickCommand: openCommand, logoutBtn: lockWorkspace,
       pasteBtn: async () => { try { $("inputText").value = await navigator.clipboard.readText(); project().inputText = $("inputText").value; syncEditors(); } catch { setStatus("瀏覽器拒絕讀剪貼簿。"); } },
       captureBtn: captureInput, clearInputBtn: () => { $("inputText").value = ""; project().inputText = ""; syncEditors(); saveLocal(); },
       openTextBtn: fileOpen, importBtn: fileOpen, loadSessionBtn: () => $("sessionInput").click(),
@@ -1523,6 +1770,7 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
     }
 
     document.addEventListener("keydown", e => {
+      if (document.body.classList.contains("auth-locked")) return;
       if (e.key === "Escape") { closeModal(); closeCommand(); }
       if (e.key === "F1") { e.preventDefault(); showHelp(); }
       if (e.key === "F5") { e.preventDefault(); runIntegration(); }
@@ -1568,6 +1816,7 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
     $("themeSelect").value = state.theme || "dark";
     initEvents();
     renderAll();
+    initAuthGate();
     setStatus(`${APP_VERSION} 就緒。`);
   }
 
