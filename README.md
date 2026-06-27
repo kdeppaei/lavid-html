@@ -2,10 +2,23 @@
 
 Standalone browser version of Lavid AI Code Workspace.
 
+Live site:
+
+https://kdeppaei.github.io/lavid-html/
+
 ## Files
 
 - `index.html`: main app
 - `assets/lavid-tech-background-p14.png`: background asset
+- `PRODUCT_ROADMAP.md`: interview/product roadmap
+
+## Current Highlights
+
+- Local password gate with salted hash storage.
+- Optional remembered-device login for 30 days without plaintext password storage.
+- Desktop keyboard shortcuts with built-in explanation.
+- Mobile action bar replacing keyboard shortcuts on touch devices.
+- Project/layer workflow, batch capture, import resources, dependency scan, export, and session save.
 
 ## GitHub Pages
 

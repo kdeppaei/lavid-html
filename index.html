@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lavid HTML 1.0pre-h1 - AI Code Workspace</title>
+  <title>Lavid HTML 1.0pre-h2 - AI Code Workspace</title>
   <style>
     :root {
       --bg: #0f1117;
@@ -578,10 +578,71 @@
       font-size: 13px;
     }
 
+    .auth-remember {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .auth-remember input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary);
+    }
+
+    .shortcut-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 8px;
+      min-width: 520px;
+    }
+
+    .shortcut-card {
+      display: grid;
+      gap: 4px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(13, 17, 23, .42);
+    }
+
+    .shortcut-card strong {
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .shortcut-card span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 22px;
+      padding: 0 7px;
+      border-radius: 6px;
+      border: 1px solid rgba(139,148,158,.34);
+      background: rgba(13,17,23,.68);
+      color: var(--text);
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 12px;
+      box-shadow: inset 0 -1px 0 rgba(255,255,255,.08);
+    }
+
+    .mobile-actionbar {
+      display: none;
+    }
+
     @media (max-width: 900px) {
       body { overflow: auto; }
       input, select { max-width: 100%; }
-      .app { height: auto; min-height: 100vh; max-width: 100vw; overflow-x: hidden; }
+      .app { height: auto; min-height: 100vh; max-width: 100vw; overflow-x: hidden; padding-bottom: 86px; }
       .topbar, .brand, .quick, .ribbon, .workspace, .pane {
         min-width: 0;
         width: 100%;
@@ -601,6 +662,28 @@
       .editor-wrap { grid-template-columns: 52px minmax(0, 1fr); }
       .resizer { display: none; }
       .pane { min-height: 560px; }
+      .desktop-shortcuts { display: none; }
+      .mobile-actionbar {
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        bottom: 8px;
+        z-index: 12;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 8px;
+        background: rgba(15, 20, 29, .86);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px) saturate(1.1);
+      }
+      .mobile-actionbar button {
+        min-height: 42px;
+        padding: 0 6px;
+        font-size: 13px;
+      }
     }
   </style>
 </head>
@@ -622,6 +705,10 @@
         <label for="authConfirm">確認密碼</label>
         <input id="authConfirm" type="password" autocomplete="new-password" minlength="6">
       </div>
+      <label class="auth-remember">
+        <input id="authRemember" type="checkbox">
+        <span>記住此裝置 30 天。此功能不會保存明文密碼，只會保存本機登入憑證。</span>
+      </label>
       <div class="auth-error" id="authError"></div>
       <div class="auth-actions">
         <button class="primary" id="authSubmit" type="submit">建立並進入工作區</button>
@@ -783,6 +870,16 @@
           <span class="badge">Enter 記錄</span>
           <span class="badge">Delete 刪除</span>
         </div>
+        <div class="shortcut-grid desktop-shortcuts">
+          <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">F</span> 搜尋</strong><span>在輸入區、輸出區、執行結果中定位關鍵字。</span></div>
+          <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">K</span> 命令</strong><span>打開命令面板，快速執行常用功能。</span></div>
+          <div class="shortcut-card"><strong><span class="kbd">F5</span> RUN</strong><span>重新整合目前專案的批次與程式碼分段。</span></div>
+          <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">S</span> 儲存</strong><span>下載目前整合輸出。</span></div>
+          <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">N</span> 新專案</strong><span>新增工作專案，適合 A/B 程式並行開發。</span></div>
+          <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">Z</span> 還原</strong><span>還原最近刪除的批次、分段或資源。</span></div>
+          <div class="shortcut-card"><strong><span class="kbd">Enter</span> 記錄</strong><span>輸入區聚焦時記錄目前素材；Shift+Enter 換行。</span></div>
+          <div class="shortcut-card"><strong><span class="kbd">Delete</span> 刪除</strong><span>刪除已選取的批次、分段或資源。</span></div>
+        </div>
       </div>
     </div>
   </section>
@@ -869,6 +966,13 @@
     <span id="statusText">就緒。</span>
     <span class="hint">Ctrl+K 命令｜Ctrl+F 搜尋｜F1 說明</span>
   </footer>
+  <nav class="mobile-actionbar" aria-label="mobile quick actions">
+    <button id="mobileSearchBtn">搜尋</button>
+    <button id="mobileCommandBtn">命令</button>
+    <button class="primary" id="mobileRunBtn">RUN</button>
+    <button id="mobileSaveBtn">儲存</button>
+    <button id="mobileHelpBtn">說明</button>
+  </nav>
 </div>
 
 <input type="file" id="fileInput" multiple hidden>
@@ -898,9 +1002,11 @@
 (() => {
   "use strict";
 
-  const APP_VERSION = "Lavid HTML 1.0pre-h1";
+  const APP_VERSION = "Lavid HTML 1.0pre-h2";
   const AUTH_KEY = "lavid-html-auth";
   const AUTH_SESSION_KEY = "lavid-html-auth-ok";
+  const AUTH_REMEMBER_KEY = "lavid-html-auth-remember";
+  const AUTH_REMEMBER_DAYS = 30;
   const LANGS = ["auto","python","c","cpp","matlab","latex","javascript","typescript","java","csharp","bash","powershell","html","css","sql","json","yaml","markdown","text"];
   const DIRECT_LANGS = new Set(["python","c","cpp","matlab","latex","javascript","typescript","java","csharp","bash","powershell","html","css","sql"]);
   const ASSET_EXTS = new Set([".png",".jpg",".jpeg",".gif",".webp",".bmp",".svg",".ico",".pdf",".csv",".xlsx",".xls",".docx",".pptx",".wav",".mp3",".mp4"]);
@@ -934,6 +1040,11 @@
     catch { return null; }
   }
 
+  function rememberRecord() {
+    try { return JSON.parse(localStorage.getItem(AUTH_REMEMBER_KEY) || "null"); }
+    catch { return null; }
+  }
+
   function randomSalt() {
     const bytes = new Uint8Array(16);
     crypto.getRandomValues(bytes);
@@ -947,6 +1058,33 @@
     return hexFromBytes(new Uint8Array(digest));
   }
 
+  async function rememberProof(rec, expiresAt) {
+    if (!crypto?.subtle) return "";
+    const raw = `${rec.salt}:${rec.hash}:${expiresAt}:${location.origin}`;
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
+    return hexFromBytes(new Uint8Array(digest));
+  }
+
+  async function saveRememberDevice(rec) {
+    const expiresAt = Date.now() + AUTH_REMEMBER_DAYS * 24 * 60 * 60 * 1000;
+    const proof = await rememberProof(rec, expiresAt);
+    localStorage.setItem(AUTH_REMEMBER_KEY, JSON.stringify({ expiresAt, proof, savedAt: now() }));
+  }
+
+  async function hasValidRememberDevice() {
+    const rec = authRecord();
+    const remembered = rememberRecord();
+    if (!rec?.hash || !rec?.salt || !remembered?.expiresAt || !remembered?.proof) return false;
+    if (Number(remembered.expiresAt) < Date.now()) {
+      localStorage.removeItem(AUTH_REMEMBER_KEY);
+      return false;
+    }
+    const expected = await rememberProof(rec, Number(remembered.expiresAt));
+    const ok = expected && expected === remembered.proof;
+    if (!ok) localStorage.removeItem(AUTH_REMEMBER_KEY);
+    return ok;
+  }
+
   function configureAuthPanel() {
     const rec = authRecord();
     const setupMode = !rec?.hash || !rec?.salt;
@@ -958,6 +1096,7 @@
     $("authConfirmWrap").style.display = setupMode ? "grid" : "none";
     $("authConfirm").required = setupMode;
     $("authSubmit").textContent = setupMode ? "建立並進入工作區" : "登入工作區";
+    $("authRemember").checked = false;
     $("authError").textContent = "";
   }
 
@@ -967,14 +1106,15 @@
     setTimeout(() => $("inputText")?.focus(), 60);
   }
 
-  function lockWorkspace() {
+  function lockWorkspace(clearRemember = true) {
     sessionStorage.removeItem(AUTH_SESSION_KEY);
+    if (clearRemember) localStorage.removeItem(AUTH_REMEMBER_KEY);
     document.body.classList.add("auth-locked");
     configureAuthPanel();
     setTimeout(() => $("authPassword")?.focus(), 60);
   }
 
-  function initAuthGate() {
+  async function initAuthGate() {
     const form = $("authForm");
     form.addEventListener("submit", async e => {
       e.preventDefault();
@@ -994,7 +1134,10 @@
         try {
           const salt = randomSalt();
           const hash = await passwordHash(password, salt);
-          localStorage.setItem(AUTH_KEY, JSON.stringify({ salt, hash, createdAt: now() }));
+          const rec = { salt, hash, createdAt: now() };
+          localStorage.setItem(AUTH_KEY, JSON.stringify(rec));
+          if ($("authRemember").checked) await saveRememberDevice(rec);
+          else localStorage.removeItem(AUTH_REMEMBER_KEY);
           $("authPassword").value = "";
           $("authConfirm").value = "";
           unlockWorkspace();
@@ -1010,6 +1153,8 @@
           $("authError").textContent = "密碼不正確。";
           return;
         }
+        if ($("authRemember").checked) await saveRememberDevice(rec);
+        else localStorage.removeItem(AUTH_REMEMBER_KEY);
         $("authPassword").value = "";
         unlockWorkspace();
       } catch (err) {
@@ -1018,7 +1163,8 @@
     });
 
     if (authRecord() && sessionStorage.getItem(AUTH_SESSION_KEY) === "1") unlockWorkspace();
-    else lockWorkspace();
+    else if (await hasValidRememberDevice()) unlockWorkspace();
+    else lockWorkspace(false);
   }
 
   const state = {
@@ -1674,6 +1820,31 @@ F1：快捷鍵說明
 Delete / Backspace：刪除選取批次或資源</pre>`);
   }
 
+  function showHelp() {
+    openModal("快捷鍵與手機操作", `
+      <div style="display:grid;gap:14px;width:100%">
+        <div>
+          <h3 style="margin:0 0 8px">PC 快捷鍵</h3>
+          <div class="shortcut-grid" style="min-width:0">
+            <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">F</span> 搜尋</strong><span>搜尋輸入、輸出與執行資訊。</span></div>
+            <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">K</span> 命令面板</strong><span>快速呼叫 RUN、匯入、掃描、專案與說明。</span></div>
+            <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">B</span> 檢查</strong><span>執行瀏覽器安全檢查。</span></div>
+            <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">S</span> 儲存</strong><span>下載目前整合輸出。</span></div>
+            <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">N</span> 新專案</strong><span>開新工作專案或圖層。</span></div>
+            <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">Z</span> 還原</strong><span>還原最近刪除動作。</span></div>
+            <div class="shortcut-card"><strong><span class="kbd">F5</span> RUN</strong><span>重新整合目前專案。</span></div>
+            <div class="shortcut-card"><strong><span class="kbd">F1</span> 說明</strong><span>開啟此說明。</span></div>
+            <div class="shortcut-card"><strong><span class="kbd">Enter</span> 記錄</strong><span>左側輸入區聚焦時記錄素材；Shift+Enter 換行。</span></div>
+            <div class="shortcut-card"><strong><span class="kbd">Delete</span> 刪除</strong><span>刪除選取批次、分段或資源。</span></div>
+          </div>
+        </div>
+        <div>
+          <h3 style="margin:0 0 8px">手機替代操作</h3>
+          <p style="margin:0;color:var(--muted);line-height:1.6">手機版不依賴 Ctrl 快捷鍵，底部固定操作列提供「搜尋、命令、RUN、儲存、說明」。命令面板是手機版的主要入口，避免把桌面鍵盤習慣硬塞到觸控介面。</p>
+        </div>
+      </div>`);
+  }
+
   function newProject() {
     const name = prompt("專案名稱", `Project ${Object.keys(state.projects).length + 1}`);
     if (!name) return;
@@ -1746,7 +1917,8 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
     $("sessionInput").addEventListener("change", e => { const f = e.target.files[0]; if (f) loadSessionFile(f); e.target.value = ""; });
 
     for (const [id, fn] of Object.entries({
-      quickSave: downloadCombined, quickSearch: search, quickRun: runIntegration, quickCommand: openCommand, logoutBtn: lockWorkspace,
+      quickSave: downloadCombined, quickSearch: search, quickRun: runIntegration, quickCommand: openCommand, logoutBtn: () => lockWorkspace(true),
+      mobileSearchBtn: search, mobileCommandBtn: openCommand, mobileRunBtn: runIntegration, mobileSaveBtn: downloadCombined, mobileHelpBtn: showHelp,
       pasteBtn: async () => { try { $("inputText").value = await navigator.clipboard.readText(); project().inputText = $("inputText").value; syncEditors(); } catch { setStatus("瀏覽器拒絕讀剪貼簿。"); } },
       captureBtn: captureInput, clearInputBtn: () => { $("inputText").value = ""; project().inputText = ""; syncEditors(); saveLocal(); },
       openTextBtn: fileOpen, importBtn: fileOpen, loadSessionBtn: () => $("sessionInput").click(),
@@ -1774,6 +1946,7 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
       if (e.key === "Escape") { closeModal(); closeCommand(); }
       if (e.key === "F1") { e.preventDefault(); showHelp(); }
       if (e.key === "F5") { e.preventDefault(); runIntegration(); }
+      if (e.ctrlKey && e.key.toLowerCase() === "b") { e.preventDefault(); browserSafeCheck(); }
       if (e.ctrlKey && e.key.toLowerCase() === "k") { e.preventDefault(); openCommand(); }
       if (e.ctrlKey && e.key.toLowerCase() === "f") { e.preventDefault(); search(); }
       if (e.ctrlKey && e.key.toLowerCase() === "s") { e.preventDefault(); downloadCombined(); }
