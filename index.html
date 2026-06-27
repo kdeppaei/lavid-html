@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lavid HTML 1.0pre-h3 - AI Code Workspace</title>
+  <title>Lavid HTML 1.0pre-h4 - AI Code Workspace</title>
   <style>
     :root {
       --bg: #0f1117;
@@ -915,6 +915,7 @@
           <button class="primary" id="downloadCombinedBtn">下載整合</button>
           <button id="downloadPieceBtn">下載本段</button>
           <button id="downloadReportBtn">下載 HTML 報告</button>
+          <button id="downloadProjectReportBtn">作品報告</button>
           <button id="downloadSessionBtn">下載 Session</button>
         </div>
       </div>
@@ -985,6 +986,7 @@
       <div class="showcase-actions">
         <button class="primary" id="showcaseLoadDemo">載入 Demo 專案</button>
         <button id="showcaseCopyBrief">複製作品簡介</button>
+        <button id="showcaseReportBtn">匯出作品報告</button>
         <button id="showcaseClose">收合展示</button>
       </div>
     </div>
@@ -1135,7 +1137,7 @@
 (() => {
   "use strict";
 
-  const APP_VERSION = "Lavid HTML 1.0pre-h3";
+  const APP_VERSION = "Lavid HTML 1.0pre-h4";
   const AUTH_KEY = "lavid-html-auth";
   const AUTH_SESSION_KEY = "lavid-html-auth-ok";
   const AUTH_REMEMBER_KEY = "lavid-html-auth-remember";
@@ -1853,6 +1855,85 @@ ${latexBlock}
     return `<!doctype html><html><head><meta charset="utf-8"><title>Lavid dependency report</title><style>body{font-family:'Microsoft JhengHei',Arial,sans-serif;margin:24px;background:#f6f8fa;color:#24292f}table{border-collapse:collapse;width:100%;background:#fff}td,th{border:1px solid #d0d7de;padding:8px;text-align:left}th{background:#eaeef2}.ok{color:#1a7f37;font-weight:bold}.missing{color:#cf222e;font-weight:bold}</style></head><body><h1>Lavid 資源依賴報告</h1><p>專案：${escapeHtml(state.currentProject)}｜時間：${now()}｜導入資源：${project().resources.length}｜缺少：${missing}</p><table><thead><tr><th>Piece</th><th>Language</th><th>Reference</th><th>Status</th></tr></thead><tbody>${tableRows}</tbody></table></body></html>`;
   }
 
+  function fileSafeName(name) {
+    return String(name || "lavid_project").replace(/[\\/:*?"<>|]+/g, "_").replace(/\s+/g, "_").slice(0, 80);
+  }
+
+  function projectReportHtml() {
+    const p = project();
+    const deps = scanDependencies(false);
+    const missing = deps.filter(row => row.status === "missing").length;
+    const generatedAt = now();
+    const codeRows = p.codeBlocks.length ? p.codeBlocks.map((block, i) => {
+      const text = String(block || "");
+      const preview = escapeHtml(text.slice(0, 1400));
+      return `<article class="block"><h3>Piece ${i + 1} · ${escapeHtml(langDisplay(p.codeLangs[i]))}</h3><p>${text.split("\n").length} lines · ${text.length} chars</p><pre>${preview}${text.length > 1400 ? "\n..." : ""}</pre></article>`;
+    }).join("\n") : `<p class="muted">No code blocks captured.</p>`;
+    const captureRows = p.captures.length ? p.captures.map((cap, i) => `<tr><td>${i + 1}</td><td>${escapeHtml(cap.time || "")}</td><td>${escapeHtml(cap.source || "")}</td><td>${cap.newCodeBlocks || 0}</td><td>${cap.rawChars || 0}</td></tr>`).join("\n") : `<tr><td colspan="5">No captures.</td></tr>`;
+    const resourceRows = p.resources.length ? p.resources.map((res, i) => `<tr><td>${i + 1}</td><td>${escapeHtml(res.name)}</td><td>${escapeHtml(res.kind || "")}</td><td>${escapeHtml(res.type || "")}</td><td>${formatBytes(res.size || 0)}</td></tr>`).join("\n") : `<tr><td colspan="5">No imported resources.</td></tr>`;
+    const depRows = deps.length ? deps.map(row => `<tr><td>${row.piece}</td><td>${escapeHtml(langDisplay(row.lang))}</td><td>${escapeHtml(row.reference)}</td><td class="${row.status === "missing" ? "bad" : "ok"}">${row.status}</td></tr>`).join("\n") : `<tr><td colspan="4">No external references detected.</td></tr>`;
+    return `<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lavid Project Report - ${escapeHtml(state.currentProject)}</title>
+  <style>
+    :root{--bg:#0f1117;--panel:#161b22;--line:#30363d;--text:#e6edf3;--muted:#8b949e;--primary:#2f81f7;--accent:#39c5cf;--ok:#2ea043;--bad:#f85149}
+    body{margin:0;background:linear-gradient(180deg,#0f1117,#070a10);color:var(--text);font-family:"Microsoft JhengHei","Segoe UI",system-ui,sans-serif;line-height:1.6}
+    main{max-width:1120px;margin:auto;padding:32px 20px 48px}
+    header{border:1px solid var(--line);border-radius:16px;padding:24px;background:rgba(22,27,34,.86);box-shadow:0 20px 60px rgba(0,0,0,.28)}
+    h1{margin:0 0 8px;color:var(--primary);font-size:32px} h2{margin:28px 0 12px;font-size:20px} h3{margin:0 0 4px}
+    .muted{color:var(--muted)} .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:16px}
+    .metric,.card,.block{border:1px solid var(--line);border-radius:12px;background:rgba(22,27,34,.78);padding:14px}
+    .metric strong{display:block;font-size:26px;color:var(--accent)}
+    table{width:100%;border-collapse:collapse;background:rgba(22,27,34,.72);border-radius:12px;overflow:hidden} th,td{border:1px solid var(--line);padding:8px;text-align:left;vertical-align:top} th{background:rgba(47,129,247,.16)}
+    pre{white-space:pre-wrap;word-break:break-word;background:#0d1117;border:1px solid var(--line);border-radius:10px;padding:12px;max-height:360px;overflow:auto}
+    .ok{color:var(--ok);font-weight:700}.bad{color:var(--bad);font-weight:700}
+    @media print{body{background:white;color:#111}header,.metric,.card,.block,table,pre{background:white;color:#111;box-shadow:none}.muted{color:#444}}
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Lavid Project Report</h1>
+    <p class="muted">Project: ${escapeHtml(state.currentProject)} · Generated: ${escapeHtml(generatedAt)} · App: ${escapeHtml(APP_VERSION)}</p>
+    <p>Lavid organizes AI-assisted coding sessions into project layers, captured batches, code blocks, imported resources, dependency checks, and exportable handoff records.</p>
+    <div class="grid">
+      <div class="metric"><strong>${p.captures.length}</strong>Captured batches</div>
+      <div class="metric"><strong>${p.codeBlocks.length}</strong>Code blocks</div>
+      <div class="metric"><strong>${p.resources.length}</strong>Resources</div>
+      <div class="metric"><strong>${missing}</strong>Missing dependencies</div>
+    </div>
+  </header>
+  <section>
+    <h2>Executive Summary</h2>
+    <div class="grid">
+      <div class="card"><h3>Problem</h3><p class="muted">AI coding output often becomes scattered across chat windows, local files, screenshots, and unmanaged snippets.</p></div>
+      <div class="card"><h3>Solution</h3><p class="muted">Lavid turns those fragments into a reviewable workspace with project separation, resource tracking, and exportable reports.</p></div>
+      <div class="card"><h3>Interview Value</h3><p class="muted">A reviewer can inspect the workflow, verify assets, review code blocks, and understand the product direction in one artifact.</p></div>
+    </div>
+  </section>
+  <section><h2>Captured Batches</h2><table><thead><tr><th>#</th><th>Time</th><th>Source</th><th>New Blocks</th><th>Chars</th></tr></thead><tbody>${captureRows}</tbody></table></section>
+  <section><h2>Imported Resources</h2><table><thead><tr><th>#</th><th>Name</th><th>Kind</th><th>Type</th><th>Size</th></tr></thead><tbody>${resourceRows}</tbody></table></section>
+  <section><h2>Dependency Scan</h2><table><thead><tr><th>Piece</th><th>Language</th><th>Reference</th><th>Status</th></tr></thead><tbody>${depRows}</tbody></table></section>
+  <section><h2>Code Blocks</h2>${codeRows}</section>
+  <section><h2>Risks And Next Steps</h2><div class="grid">
+    <div class="card"><h3>Current Limitation</h3><p class="muted">GitHub Pages is static, so real Python/C/LaTeX compilation requires a backend runner or desktop wrapper.</p></div>
+    <div class="card"><h3>Product Next Step</h3><p class="muted">Add cloud auth, shared projects, version diff, execution logs, and compiler workers for company-grade adoption.</p></div>
+  </div></section>
+</main>
+</body>
+</html>`;
+  }
+
+  function downloadProjectReport() {
+    project().inputText = $("inputText").value;
+    const name = `${fileSafeName(state.currentProject)}_Lavid_Project_Report.html`;
+    download(name, projectReportHtml(), "text/html;charset=utf-8");
+    setStatus("作品報告已產生：包含摘要、批次、程式碼、資源與依賴掃描。");
+  }
+
   function previewHtmlReport() {
     const htmlText = dependencyHtml();
     openModal("HTML 依賴報告", `<iframe srcdoc="${escapeHtml(htmlText)}"></iframe>`);
@@ -2058,6 +2139,7 @@ ${latexBlock}
     ["展示模式", () => toggleShowcase()],
     ["載入 Demo 專案", loadDemoProject],
     ["複製作品簡介", copyPortfolioBrief],
+    ["匯出作品報告", downloadProjectReport],
     ["記錄本次輸入", captureInput],
     ["RUN 整合", runIntegration],
     ["導入檔案", () => $("fileInput").click()],
@@ -2194,7 +2276,7 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
 
     for (const [id, fn] of Object.entries({
       quickSave: downloadCombined, quickSearch: search, quickRun: runIntegration, quickCommand: openCommand, showcaseBtn: () => toggleShowcase(), demoLoadBtn: loadDemoProject, logoutBtn: () => lockWorkspace(true),
-      showcaseLoadDemo: loadDemoProject, showcaseCopyBrief: copyPortfolioBrief, showcaseClose: () => toggleShowcase(false),
+      showcaseLoadDemo: loadDemoProject, showcaseCopyBrief: copyPortfolioBrief, showcaseReportBtn: downloadProjectReport, showcaseClose: () => toggleShowcase(false),
       mobileSearchBtn: search, mobileCommandBtn: openCommand, mobileRunBtn: runIntegration, mobileDemoBtn: loadDemoProject, mobileSaveBtn: downloadCombined, mobileHelpBtn: showHelp,
       pasteBtn: async () => { try { $("inputText").value = await navigator.clipboard.readText(); project().inputText = $("inputText").value; syncEditors(); } catch { setStatus("瀏覽器拒絕讀剪貼簿。"); } },
       captureBtn: captureInput, clearInputBtn: () => { $("inputText").value = ""; project().inputText = ""; syncEditors(); saveLocal(); },
@@ -2207,7 +2289,7 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
       nextPieceBtn: () => { state.currentPiece = Math.min(activeBlocks().length - 1, state.currentPiece + 1); renderOutput(); },
       toggleModeBtn: () => { state.outputMode = state.outputMode === "piece" ? "combined" : "piece"; renderOutput(); },
       deletePieceBtn: deleteCurrentPiece, deletePieceBtn2: deleteCurrentPiece,
-      downloadCombinedBtn: downloadCombined, downloadPieceBtn: downloadPiece, downloadReportBtn: () => download("lavid_dependency_report.html", dependencyHtml(), "text/html;charset=utf-8"), downloadSessionBtn: downloadSession,
+      downloadCombinedBtn: downloadCombined, downloadPieceBtn: downloadPiece, downloadReportBtn: () => download("lavid_dependency_report.html", dependencyHtml(), "text/html;charset=utf-8"), downloadProjectReportBtn: downloadProjectReport, downloadSessionBtn: downloadSession,
       resourceImportBtn: fileOpen, resourcePreviewBtn: previewResource, resourceDeleteBtn: deleteSelectedResource,
       scanBtn: () => scanDependencies(true), htmlReportBtn: previewHtmlReport,
       safeCheckBtn: browserSafeCheck, runHtmlPreviewBtn: previewHtmlFromCode,

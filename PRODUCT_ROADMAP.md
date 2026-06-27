@@ -22,6 +22,7 @@ Implemented in the current static version:
 - Optional 30-day remembered-device login proof without storing plaintext password.
 - Interview showcase mode for a 60-second product walkthrough.
 - One-click demo project with code blocks, imported resources, and an executable presentation flow.
+- One-click project report export with summary, captured batches, code blocks, resources, dependency status, and next steps.
 - Desktop keyboard shortcuts with built-in help.
 - Mobile-friendly action bar replacing desktop keyboard workflows.
 - Project/layer workflow, batch capture, drag/import resources, dependency scan, export, and session save.
@@ -30,7 +31,7 @@ Implemented in the current static version:
 
 ### P1: Portfolio Polish
 - Add a guided first-run tour that walks through the showcase panel, demo project, and export flow.
-- Add exportable project report with screenshots, dependency list, and code summary.
+- Add report screenshots and richer visual diffs for exported project reports.
 - Add a public "case study" route for reviewers who only want the narrative, not the full tool.
 
 ### P2: Team Product Direction

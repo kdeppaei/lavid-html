@@ -18,6 +18,7 @@ https://kdeppaei.github.io/lavid-html/
 - Optional remembered-device login for 30 days without plaintext password storage.
 - Interview showcase mode with a concise client/builder product narrative.
 - One-click demo project for fast portfolio presentations.
+- One-click HTML project report export for interview handoff.
 - Desktop keyboard shortcuts with built-in explanation.
 - Mobile action bar replacing keyboard shortcuts on touch devices.
 - Project/layer workflow, batch capture, import resources, dependency scan, export, and session save.
