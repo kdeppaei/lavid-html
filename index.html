@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lavid HTML 1.0pre-h2 - AI Code Workspace</title>
+  <title>Lavid HTML 1.0pre-h3 - AI Code Workspace</title>
   <style>
     :root {
       --bg: #0f1117;
@@ -639,6 +639,88 @@
       display: none;
     }
 
+    .showcase-panel {
+      display: none;
+      grid-template-columns: minmax(280px, .9fr) minmax(420px, 1.4fr);
+      gap: 12px;
+      border: 1px solid rgba(57, 197, 207, .28);
+      border-radius: 12px;
+      background: rgba(15, 20, 29, .78);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px) saturate(1.12);
+      padding: 12px;
+    }
+
+    .showcase-panel.active { display: grid; }
+
+    .showcase-title {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .showcase-title h2 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0;
+      color: var(--text);
+    }
+
+    .showcase-title p,
+    .showcase-card p,
+    .showcase-card li {
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 13px;
+    }
+
+    .showcase-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .showcase-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .showcase-card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(13, 17, 23, .44);
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .showcase-card h3 {
+      margin: 0 0 6px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .showcase-card ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .metric-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .metric-pill {
+      border: 1px solid rgba(57, 197, 207, .26);
+      border-radius: 999px;
+      padding: 4px 8px;
+      color: var(--text);
+      background: rgba(57, 197, 207, .08);
+      font-size: 12px;
+    }
+
     @media (max-width: 900px) {
       body { overflow: auto; }
       input, select { max-width: 100%; }
@@ -670,7 +752,7 @@
         bottom: 8px;
         z-index: 12;
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(6, 1fr);
         gap: 6px;
         border: 1px solid var(--line);
         border-radius: 14px;
@@ -682,8 +764,11 @@
       .mobile-actionbar button {
         min-height: 42px;
         padding: 0 6px;
-        font-size: 13px;
+        font-size: 12px;
       }
+      .showcase-panel.active { grid-template-columns: 1fr; }
+      .showcase-grid { grid-template-columns: 1fr; }
+      .showcase-actions button { flex: 1 1 130px; }
     }
   </style>
 </head>
@@ -732,6 +817,8 @@
       <button id="quickSearch">搜</button>
       <button class="primary" id="quickRun">RUN</button>
       <button id="quickCommand">命令</button>
+      <button id="showcaseBtn">展示</button>
+      <button id="demoLoadBtn">Demo</button>
       <button id="logoutBtn" title="Lock workspace">登出</button>
       <select id="themeSelect" title="Theme">
         <option value="dark">專業石墨</option>
@@ -884,6 +971,51 @@
     </div>
   </section>
 
+  <section class="showcase-panel" id="showcasePanel" aria-label="interview showcase">
+    <div class="showcase-title">
+      <span class="auth-chip">Interview showcase</span>
+      <h2>AI 程式碼工作流整理器</h2>
+      <p>Lavid 的定位不是另一個聊天機器人，而是把多個 AI 回覆、程式碼片段、導入資源與輸出紀錄整理成可審查、可展示、可交付的工作區。</p>
+      <div class="metric-row">
+        <span class="metric-pill">多專案並行</span>
+        <span class="metric-pill">批次擷取</span>
+        <span class="metric-pill">資源依賴</span>
+        <span class="metric-pill">手機可用</span>
+      </div>
+      <div class="showcase-actions">
+        <button class="primary" id="showcaseLoadDemo">載入 Demo 專案</button>
+        <button id="showcaseCopyBrief">複製作品簡介</button>
+        <button id="showcaseClose">收合展示</button>
+      </div>
+    </div>
+    <div class="showcase-grid">
+      <div class="showcase-card">
+        <h3>甲方需求</h3>
+        <ul>
+          <li>面試官需要在 60 秒內理解作品價值。</li>
+          <li>AI coding 過程不能只留下混亂貼文。</li>
+          <li>公司需要可追溯、可匯出、可交接的開發紀錄。</li>
+        </ul>
+      </div>
+      <div class="showcase-card">
+        <h3>乙方解法</h3>
+        <ul>
+          <li>把貼上的 AI 回覆拆成可管理的 code blocks。</li>
+          <li>用專案/圖層隔離不同程式與資源。</li>
+          <li>用 Demo、快捷鍵與手機操作提升展示效率。</li>
+        </ul>
+      </div>
+      <div class="showcase-card">
+        <h3>展示腳本</h3>
+        <p>1. 點 Demo。2. 看左側批次與右側輸出。3. 用 RUN 整合。4. 開資源依賴掃描。5. 用快捷鍵/手機列展示操作成熟度。</p>
+      </div>
+      <div class="showcase-card">
+        <h3>下一步產品化</h3>
+        <p>接雲端登入、團隊同步、版本 diff、後端編譯 runner，讓它從個人工具升級成 AI coding governance workspace。</p>
+      </div>
+    </div>
+  </section>
+
   <main class="workspace" id="workspace">
     <section class="pane" id="leftPane">
       <div class="pane-title">
@@ -970,6 +1102,7 @@
     <button id="mobileSearchBtn">搜尋</button>
     <button id="mobileCommandBtn">命令</button>
     <button class="primary" id="mobileRunBtn">RUN</button>
+    <button id="mobileDemoBtn">Demo</button>
     <button id="mobileSaveBtn">儲存</button>
     <button id="mobileHelpBtn">說明</button>
   </nav>
@@ -1002,7 +1135,7 @@
 (() => {
   "use strict";
 
-  const APP_VERSION = "Lavid HTML 1.0pre-h2";
+  const APP_VERSION = "Lavid HTML 1.0pre-h3";
   const AUTH_KEY = "lavid-html-auth";
   const AUTH_SESSION_KEY = "lavid-html-auth-ok";
   const AUTH_REMEMBER_KEY = "lavid-html-auth-remember";
@@ -1194,6 +1327,146 @@
       resources: [],
       inputText: "",
     };
+  }
+
+  function demoDataUrl(text, mime = "text/plain") {
+    return `data:${mime};charset=utf-8,${encodeURIComponent(text)}`;
+  }
+
+  function buildDemoProject() {
+    const name = "Interview Demo - AI Code Workspace";
+    const htmlBlock = `<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <title>Lavid demo dashboard</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 24px; background: #0f172a; color: #e5e7eb; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .card { border: 1px solid #334155; border-radius: 12px; padding: 16px; background: #111827; }
+    strong { color: #38bdf8; }
+  </style>
+</head>
+<body>
+  <h1>Lavid Demo Report</h1>
+  <p>AI coding fragments are organized into project layers, resources, and exportable blocks.</p>
+  <section class="grid">
+    <div class="card"><strong>3</strong><br>Captured AI batches</div>
+    <div class="card"><strong>4</strong><br>Generated code blocks</div>
+    <div class="card"><strong>2</strong><br>Imported resources</div>
+  </section>
+</body>
+</html>`;
+    const pythonBlock = `from pathlib import Path
+
+REQUIRED_ASSETS = ["assets/lavid-tech-background-p14.png", "case-study-notes.md"]
+
+def scan_assets(root="."):
+    root = Path(root)
+    return {asset: (root / asset).exists() for asset in REQUIRED_ASSETS}
+
+if __name__ == "__main__":
+    for asset, ok in scan_assets().items():
+        print(f"{asset}: {'ok' if ok else 'missing'}")`;
+    const latexBlock = `\\documentclass{article}
+\\usepackage[margin=1in]{geometry}
+\\title{Lavid AI Coding Workspace}
+\\author{Portfolio Demo}
+\\begin{document}
+\\maketitle
+\\section*{Problem}
+AI-assisted coding creates scattered snippets, missing resources, and weak handoff records.
+\\section*{Solution}
+Lavid captures AI responses, extracts code blocks, manages resources, and exports reviewable artifacts.
+\\end{document}`;
+    const markdownBlock = `# Lavid Interview Case Study
+
+## Client Pain
+- AI coding sessions are fragmented across chat windows.
+- Files, images, snippets, and execution notes are hard to audit.
+- Interview demos need a crisp product story, not just raw code.
+
+## Builder Response
+- Project layers for parallel work.
+- Batch capture and code extraction.
+- Resource dependency scan.
+- Desktop shortcuts plus mobile action bar.
+`;
+    const p = emptyProject(name);
+    p.language = "auto";
+    p.inputText = `Demo material loaded for interview presentation.
+
+\`\`\`html
+${htmlBlock}
+\`\`\`
+
+\`\`\`python
+${pythonBlock}
+\`\`\`
+
+\`\`\`tex
+${latexBlock}
+\`\`\``;
+    p.codeBlocks = [htmlBlock, pythonBlock, latexBlock, markdownBlock];
+    p.codeLangs = ["html", "python", "latex", "markdown"];
+    p.originalBlocks = [...p.codeBlocks];
+    p.originalLangs = [...p.codeLangs];
+    p.captures = [
+      { id: uid("cap_"), time: now(), source: "Demo / client brief", rawChars: 420, newCodeBlocks: 1, duplicateBlocks: 0 },
+      { id: uid("cap_"), time: now(), source: "Demo / implementation", rawChars: 1180, newCodeBlocks: 2, duplicateBlocks: 0 },
+      { id: uid("cap_"), time: now(), source: "Demo / report", rawChars: 520, newCodeBlocks: 1, duplicateBlocks: 0 },
+    ];
+    p.resources = [
+      {
+        id: uid("res_"),
+        name: "case-study-notes.md",
+        type: "text/markdown",
+        kind: "document",
+        size: markdownBlock.length,
+        addedAt: now(),
+        dataUrl: demoDataUrl(markdownBlock, "text/markdown")
+      },
+      {
+        id: uid("res_"),
+        name: "assets/lavid-tech-background-p14.png",
+        type: "image/png",
+        kind: "image",
+        size: 1654756,
+        addedAt: now(),
+        dataUrl: "assets/lavid-tech-background-p14.png"
+      }
+    ];
+    return p;
+  }
+
+  function toggleShowcase(force) {
+    const panel = $("showcasePanel");
+    const active = typeof force === "boolean" ? force : !panel.classList.contains("active");
+    panel.classList.toggle("active", active);
+    if (active) setStatus("展示模式已開啟：可一鍵載入 Demo 專案。");
+  }
+
+  function loadDemoProject() {
+    const demo = buildDemoProject();
+    state.projects[demo.name] = demo;
+    state.currentProject = demo.name;
+    state.selectedCapture = 0;
+    state.selectedResource = 0;
+    state.currentPiece = 0;
+    state.outputMode = "piece";
+    state.activeBlocks = null;
+    state.activeLangs = null;
+    $("inputText").value = demo.inputText;
+    toggleShowcase(true);
+    renderAll();
+    runIntegration();
+    setView("code");
+    saveLocal();
+    setStatus("Demo 專案已載入：可展示批次、程式碼、資源與依賴掃描。");
+  }
+
+  function copyPortfolioBrief() {
+    copyText(`Lavid 是一個 AI-assisted code workspace，目標是把多個 AI 回覆、程式碼片段、導入資源與輸出紀錄整理成可審查、可展示、可交付的工作區。它支援專案/圖層、批次擷取、資源依賴掃描、匯出、登入保護、PC 快捷鍵與手機操作列。下一步可接雲端登入、多人同步、版本 diff 與後端編譯 runner。`);
   }
 
   function project() {
@@ -1782,6 +2055,9 @@
   }
 
   const commands = [
+    ["展示模式", () => toggleShowcase()],
+    ["載入 Demo 專案", loadDemoProject],
+    ["複製作品簡介", copyPortfolioBrief],
     ["記錄本次輸入", captureInput],
     ["RUN 整合", runIntegration],
     ["導入檔案", () => $("fileInput").click()],
@@ -1917,8 +2193,9 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
     $("sessionInput").addEventListener("change", e => { const f = e.target.files[0]; if (f) loadSessionFile(f); e.target.value = ""; });
 
     for (const [id, fn] of Object.entries({
-      quickSave: downloadCombined, quickSearch: search, quickRun: runIntegration, quickCommand: openCommand, logoutBtn: () => lockWorkspace(true),
-      mobileSearchBtn: search, mobileCommandBtn: openCommand, mobileRunBtn: runIntegration, mobileSaveBtn: downloadCombined, mobileHelpBtn: showHelp,
+      quickSave: downloadCombined, quickSearch: search, quickRun: runIntegration, quickCommand: openCommand, showcaseBtn: () => toggleShowcase(), demoLoadBtn: loadDemoProject, logoutBtn: () => lockWorkspace(true),
+      showcaseLoadDemo: loadDemoProject, showcaseCopyBrief: copyPortfolioBrief, showcaseClose: () => toggleShowcase(false),
+      mobileSearchBtn: search, mobileCommandBtn: openCommand, mobileRunBtn: runIntegration, mobileDemoBtn: loadDemoProject, mobileSaveBtn: downloadCombined, mobileHelpBtn: showHelp,
       pasteBtn: async () => { try { $("inputText").value = await navigator.clipboard.readText(); project().inputText = $("inputText").value; syncEditors(); } catch { setStatus("瀏覽器拒絕讀剪貼簿。"); } },
       captureBtn: captureInput, clearInputBtn: () => { $("inputText").value = ""; project().inputText = ""; syncEditors(); saveLocal(); },
       openTextBtn: fileOpen, importBtn: fileOpen, loadSessionBtn: () => $("sessionInput").click(),

@@ -20,6 +20,8 @@ Implemented in the current static version:
 - Browser-only Lavid workspace deployable on GitHub Pages.
 - Local password gate with salted hash storage.
 - Optional 30-day remembered-device login proof without storing plaintext password.
+- Interview showcase mode for a 60-second product walkthrough.
+- One-click demo project with code blocks, imported resources, and an executable presentation flow.
 - Desktop keyboard shortcuts with built-in help.
 - Mobile-friendly action bar replacing desktop keyboard workflows.
 - Project/layer workflow, batch capture, drag/import resources, dependency scan, export, and session save.
@@ -27,9 +29,9 @@ Implemented in the current static version:
 ## Next Iterations
 
 ### P1: Portfolio Polish
-- Add onboarding demo data and a guided first-run tour.
-- Add a visible "Case Study" panel explaining the workflow for interviewers.
+- Add a guided first-run tour that walks through the showcase panel, demo project, and export flow.
 - Add exportable project report with screenshots, dependency list, and code summary.
+- Add a public "case study" route for reviewers who only want the narrative, not the full tool.
 
 ### P2: Team Product Direction
 - Add Supabase or Firebase Auth for real Google/GitHub login.
