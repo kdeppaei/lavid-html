@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lavid HTML 1.0pre-h5 - AI Code Workspace</title>
+  <title>Lavid HTML 1.0pre-h6 - AI Code Workspace</title>
   <style>
     :root {
       --bg: #0f1117;
@@ -1003,6 +1003,7 @@
           <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">K</span> 命令</strong><span>打開命令面板，快速執行常用功能。</span></div>
           <div class="shortcut-card"><strong><span class="kbd">F5</span> RUN</strong><span>重新整合目前專案的批次與程式碼分段。</span></div>
           <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">Alt</span> + <span class="kbd">R</span> 本地執行</strong><span>開啟本地執行助手與下載命令。</span></div>
+          <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">Alt</span> + <span class="kbd">O</span> 開 Runner</strong><span>HTML 新分頁執行；其他語言下載程式檔與 Runner.cmd。</span></div>
           <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">S</span> 儲存</strong><span>下載目前整合輸出。</span></div>
           <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">N</span> 新專案</strong><span>新增工作專案，適合 A/B 程式並行開發。</span></div>
           <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">Z</span> 還原</strong><span>還原最近刪除的批次、分段或資源。</span></div>
@@ -1097,6 +1098,7 @@
           <button id="copyPieceBtn">複製本段</button>
           <button id="savePieceBtn">下載本段</button>
           <button id="localRunCodeBtn">本地執行</button>
+          <button class="accent" id="openRunnerCodeBtn">開 IDE/Runner</button>
           <button class="danger" id="deletePieceBtn2">刪除本段</button>
           <button id="restoreOriginalBtn">回原始分段</button>
           <label class="badge">分段數 <input id="splitCount" type="number" value="8" min="1" max="64" style="width:70px"></label>
@@ -1129,6 +1131,7 @@
           <button id="safeCheckBtn">瀏覽器安全檢查</button>
           <button id="runHtmlPreviewBtn">HTML 預覽</button>
           <button class="accent" id="localRunBtn">本地執行助手</button>
+          <button id="openRunnerBtn">開 IDE/Runner</button>
           <span class="hint">本頁不會呼叫本機編譯器</span>
         </div>
         <div class="editor-wrap">
@@ -1180,7 +1183,7 @@
 (() => {
   "use strict";
 
-  const APP_VERSION = "Lavid HTML 1.0pre-h5";
+  const APP_VERSION = "Lavid HTML 1.0pre-h6";
   const AUTH_KEY = "lavid-html-auth";
   const AUTH_SESSION_KEY = "lavid-html-auth-ok";
   const AUTH_REMEMBER_KEY = "lavid-html-auth-remember";
@@ -1592,7 +1595,18 @@ ${latexBlock}
 
   function addCapture(rawText, source = "手動輸入") {
     const p = project();
-    const blocks = extractFenced(rawText);
+    let blocks = extractFenced(rawText);
+    let plainFallback = false;
+    if (!blocks.length) {
+      const cleaned = cleanCode(rawText);
+      const selectedLang = p.language && p.language !== "auto" ? p.language : "";
+      const inferredLang = inferLanguageFromCode(cleaned);
+      const lang = selectedLang || inferredLang || "text";
+      if (cleaned) {
+        blocks = [{ lang, code: cleaned }];
+        plainFallback = true;
+      }
+    }
     const newIds = [];
     let duplicate = 0;
     const existing = new Set(p.codeBlocks.map((b, i) => codeBlockId(p.codeLangs[i], b)));
@@ -1614,12 +1628,15 @@ ${latexBlock}
       rawChars: rawText.length,
       newCodeBlocks: newIds.length,
       duplicateCodeBlocks: duplicate,
+      plainFallback,
       rawText,
     });
     if ($("autoClear").checked) $("inputText").value = "";
     state.currentPiece = Math.max(0, p.codeBlocks.length - 1);
     renderAll();
-    setStatus(`已記錄批次：新增 ${newIds.length} 段 code，重複 ${duplicate} 段。`);
+    setStatus(plainFallback
+      ? `已記錄批次：未偵測到 fenced code，已將整段內容整合為 ${newIds.length} 段 ${langDisplay(blocks[0]?.lang)}。`
+      : `已記錄批次：新增 ${newIds.length} 段 code，重複 ${duplicate} 段。`);
     saveLocal();
   }
 
@@ -1821,6 +1838,95 @@ ${latexBlock}
     setStatus(`已下載 ${langDisplay(info.lang)} 檔案，可用本地執行命令測試。`);
   }
 
+  function runnerFileName(lang) {
+    return `${fileSafeName(state.currentProject || "lavid")}_piece_${state.currentPiece + 1}_runner.cmd`;
+  }
+
+  function batchQuote(text) {
+    return `"${String(text || "").replace(/"/g, '""')}"`;
+  }
+
+  function windowsRunnerScript(lang, filename) {
+    const exe = filename.replace(/\.[^.]+$/, "");
+    const pdf = filename.replace(/\.[^.]+$/, ".pdf");
+    const file = batchQuote(filename);
+    const runLines = ({
+      python: [`where py >nul 2>nul && py ${file} || python ${file}`],
+      c: [`gcc ${file} -o ${batchQuote(exe + ".exe")} && ${batchQuote(exe + ".exe")}`],
+      cpp: [`g++ ${file} -std=c++17 -o ${batchQuote(exe + ".exe")} && ${batchQuote(exe + ".exe")}`],
+      javascript: [`node ${file}`],
+      typescript: [`npx ts-node ${file}`],
+      matlab: [`matlab -batch "run('${filename.replace(/'/g, "''")}')"`],
+      latex: [`pdflatex -interaction=nonstopmode ${file}`, `if exist ${batchQuote(pdf)} start "" ${batchQuote(pdf)}`],
+      java: [`javac ${file}`, `java ${batchQuote(filename.replace(/\.java$/i, ""))}`],
+      csharp: [`dotnet new console -n LavidRun`, `copy /Y ${file} ".\\LavidRun\\Program.cs"`, `dotnet run --project ".\\LavidRun"`],
+      bash: [`bash ${file}`],
+      powershell: [`powershell -ExecutionPolicy Bypass -File ${file}`],
+      html: [`start "" ${file}`],
+      css: [`start "" ${file}`],
+      sql: [`sqlite3 lavid.sqlite ".read ${filename}"`],
+      json: [`python -m json.tool ${file}`],
+      yaml: [`python -c "import yaml,sys; yaml.safe_load(open('${filename}')); print('YAML OK')"`],
+      markdown: [`start "" ${file}`],
+      text: [`start "" ${file}`]
+    })[lang] || [`start "" ${file}`];
+    return [
+      "@echo off",
+      "setlocal",
+      "cd /d \"%~dp0\"",
+      `set "LAVID_FILE=${filename}"`,
+      `echo Lavid Runner - ${langDisplay(lang)}`,
+      "echo File: %LAVID_FILE%",
+      "echo.",
+      "where code >nul 2>nul",
+      "if %errorlevel%==0 (",
+      "  echo Opening VS Code...",
+      "  code \"%LAVID_FILE%\"",
+      ") else (",
+      "  echo VS Code CLI not found. Opening with the Windows default app...",
+      "  start \"\" \"%LAVID_FILE%\"",
+      ")",
+      "echo.",
+      "echo Running...",
+      ...runLines,
+      "echo.",
+      "pause"
+    ].join("\r\n");
+  }
+
+  function downloadRunnerScript() {
+    const info = resolveRunnableLanguage();
+    const filename = runnableFileName(info.lang);
+    download(runnerFileName(info.lang), windowsRunnerScript(info.lang, filename), "application/x-bat;charset=utf-8");
+    setStatus("已下載 Windows Runner.cmd。請把它和程式檔放在同一個資料夾後執行。");
+  }
+
+  function downloadRunnablePackage() {
+    downloadCurrentRunnable();
+    setTimeout(downloadRunnerScript, 300);
+    setStatus("已下載程式檔與 Windows Runner.cmd；若瀏覽器擋多檔下載，請允許此網站下載多個檔案。");
+  }
+
+  function openHtmlRunner(code) {
+    const blob = new Blob([code], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank", "noopener,noreferrer");
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    setStatus("HTML Runner 已在新分頁開啟。");
+  }
+
+  function openInIdeOrRunner() {
+    const info = resolveRunnableLanguage();
+    const code = currentRunnableCode();
+    if (!code.trim()) { setStatus("目前沒有可開啟的整合程式碼。"); return; }
+    if (info.lang === "html") {
+      openHtmlRunner(code);
+      return;
+    }
+    downloadRunnablePackage();
+    openLocalRunAssistant();
+  }
+
   function openLocalRunAssistant() {
     const info = resolveRunnableLanguage();
     const code = currentRunnableCode();
@@ -1840,12 +1946,16 @@ ${latexBlock}
         <p class="hint">GitHub Pages 是純前端頁面，不能直接啟動本機編譯器、MiKTeX 或 VS Code。請下載目前段落後，在本機終端執行下列命令；若要真正一鍵執行，需要下一步做本地 helper 或桌面版包裝。</p>
         <pre class="command-block">${escapeHtml(commands.join("\n"))}</pre>
         <div class="row">
+          <button class="accent" id="openRunnerInline">開 IDE/Runner</button>
           <button class="primary" id="downloadRunnableInline">下載目前程式檔</button>
+          <button id="downloadRunnerInline">下載 Windows Runner.cmd</button>
           <button id="copyRunCommandInline">複製執行命令</button>
           <button id="copyCurrentCodeInline">複製目前段落</button>
         </div>
       </div>`);
+    $("openRunnerInline")?.addEventListener("click", openInIdeOrRunner);
     $("downloadRunnableInline")?.addEventListener("click", downloadCurrentRunnable);
+    $("downloadRunnerInline")?.addEventListener("click", downloadRunnerScript);
     $("copyRunCommandInline")?.addEventListener("click", () => copyText(commands.join("\n")));
     $("copyCurrentCodeInline")?.addEventListener("click", () => copyText(code));
     setView("run");
@@ -2325,6 +2435,7 @@ ${latexBlock}
     ["HTML 依賴報告", previewHtmlReport],
     ["瀏覽器安全檢查", browserSafeCheck],
     ["本地執行助手", openLocalRunAssistant],
+    ["開 IDE/Runner", openInIdeOrRunner],
     ["下載整合", downloadCombined],
     ["儲存 Session", downloadSession],
     ["新增專案", newProject],
@@ -2367,6 +2478,7 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
             <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">K</span> 命令面板</strong><span>快速呼叫 RUN、匯入、掃描、專案與說明。</span></div>
             <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">B</span> 檢查</strong><span>執行瀏覽器安全檢查。</span></div>
             <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">Alt</span> + <span class="kbd">R</span> 本地執行</strong><span>開啟本地執行助手，下載目前段落並複製命令。</span></div>
+            <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">Alt</span> + <span class="kbd">O</span> 開 Runner</strong><span>HTML 直接預覽；Python/C/LaTeX 下載程式檔與 Windows Runner。</span></div>
             <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">S</span> 儲存</strong><span>下載目前整合輸出。</span></div>
             <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">N</span> 新專案</strong><span>開新工作專案或圖層。</span></div>
             <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">Z</span> 還原</strong><span>還原最近刪除動作。</span></div>
@@ -2475,8 +2587,8 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
       downloadCombinedBtn: downloadCombined, downloadPieceBtn: downloadPiece, downloadReportBtn: () => download("lavid_dependency_report.html", dependencyHtml(), "text/html;charset=utf-8"), downloadProjectReportBtn: downloadProjectReport, downloadSessionBtn: downloadSession,
       resourceImportBtn: fileOpen, resourcePreviewBtn: previewResource, resourceDeleteBtn: deleteSelectedResource,
       scanBtn: () => scanDependencies(true), htmlReportBtn: previewHtmlReport,
-      safeCheckBtn: browserSafeCheck, runHtmlPreviewBtn: previewHtmlFromCode, localRunBtn: openLocalRunAssistant,
-      copyPieceBtn: () => copyText($("outputText").value), savePieceBtn: downloadPiece, localRunCodeBtn: openLocalRunAssistant, restoreOriginalBtn: restoreOriginalPieces, splitBtn: splitPieces,
+      safeCheckBtn: browserSafeCheck, runHtmlPreviewBtn: previewHtmlFromCode, localRunBtn: openLocalRunAssistant, openRunnerBtn: openInIdeOrRunner,
+      copyPieceBtn: () => copyText($("outputText").value), savePieceBtn: downloadPiece, localRunCodeBtn: openLocalRunAssistant, openRunnerCodeBtn: openInIdeOrRunner, restoreOriginalBtn: restoreOriginalPieces, splitBtn: splitPieces,
       helpBtn: showHelp, modalClose: closeModal, commandClose: closeCommand,
     })) {
       const el = $(id);
@@ -2490,6 +2602,7 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
       if (e.key === "F5") { e.preventDefault(); runIntegration(); }
       if (e.ctrlKey && e.key.toLowerCase() === "b") { e.preventDefault(); browserSafeCheck(); }
       if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "r") { e.preventDefault(); openLocalRunAssistant(); }
+      if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "o") { e.preventDefault(); openInIdeOrRunner(); }
       if (e.ctrlKey && e.key.toLowerCase() === "k") { e.preventDefault(); openCommand(); }
       if (e.ctrlKey && e.key.toLowerCase() === "f") { e.preventDefault(); search(); }
       if (e.ctrlKey && e.key.toLowerCase() === "s") { e.preventDefault(); downloadCombined(); }
