@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lavid HTML 1.0pre-h6 - AI Code Workspace</title>
+  <title>Lavid HTML 1.0pre-h7 - AI Code Workspace</title>
   <style>
     :root {
       --bg: #0f1117;
@@ -479,6 +479,56 @@
       overflow: auto;
       border: 1px solid var(--line);
       border-radius: 8px;
+    }
+
+    .context-menu {
+      position: fixed;
+      z-index: 70;
+      display: none;
+      min-width: 230px;
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel-glass);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px) saturate(1.12);
+    }
+
+    .context-menu.active { display: grid; gap: 3px; }
+
+    .context-menu button {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      min-height: 34px;
+      border: none;
+      border-radius: 7px;
+      box-shadow: none;
+      background: transparent;
+      text-align: left;
+    }
+
+    .context-menu button:hover {
+      background: rgba(47, 129, 247, .16);
+      transform: none;
+    }
+
+    .context-menu button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .context-menu .shortcut {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .context-menu .separator {
+      height: 1px;
+      margin: 4px 6px;
+      background: var(--line);
     }
 
     .badge {
@@ -1009,6 +1059,7 @@
           <div class="shortcut-card"><strong><span class="kbd">Ctrl</span> + <span class="kbd">Z</span> 還原</strong><span>還原最近刪除的批次、分段或資源。</span></div>
           <div class="shortcut-card"><strong><span class="kbd">Enter</span> 記錄</strong><span>輸入區聚焦時記錄目前素材；Shift+Enter 換行。</span></div>
           <div class="shortcut-card"><strong><span class="kbd">Delete</span> 刪除</strong><span>刪除已選取的批次、分段或資源。</span></div>
+          <div class="shortcut-card"><strong><span class="kbd">右鍵</span> 智慧選單</strong><span>批次、資源、輸出區會顯示刪除、還原與 Runner 操作。</span></div>
         </div>
       </div>
     </div>
@@ -1179,11 +1230,13 @@
   </div>
 </div>
 
+<div class="context-menu" id="contextMenu" role="menu" aria-label="Lavid context menu"></div>
+
 <script>
 (() => {
   "use strict";
 
-  const APP_VERSION = "Lavid HTML 1.0pre-h6";
+  const APP_VERSION = "Lavid HTML 1.0pre-h7";
   const AUTH_KEY = "lavid-html-auth";
   const AUTH_SESSION_KEY = "lavid-html-auth-ok";
   const AUTH_REMEMBER_KEY = "lavid-html-auth-remember";
@@ -2069,10 +2122,11 @@ ${latexBlock}
   function deleteSelectedResource() {
     const p = project();
     if (state.selectedResource < 0) return;
+    state.undo.push(JSON.stringify(p));
     p.resources.splice(state.selectedResource, 1);
     state.selectedResource = -1;
     renderResources();
-    setStatus("已刪除導入資源。");
+    setStatus("已刪除導入資源，Ctrl+Z 可還原。");
     saveLocal();
   }
 
@@ -2338,6 +2392,7 @@ ${latexBlock}
     project().captures.forEach((cap, i) => {
       const div = document.createElement("div");
       div.className = "list-item" + (i === state.selectedCapture ? " selected" : "");
+      div.dataset.index = String(i);
       div.textContent = `${String(i + 1).padStart(3, "0")}. ${cap.time}｜${cap.source}｜新增 ${cap.newCodeBlocks || 0} 段｜${cap.rawChars || 0} 字元`;
       div.onclick = () => { state.selectedCapture = i; renderCaptures(); };
       list.appendChild(div);
@@ -2352,6 +2407,7 @@ ${latexBlock}
     resources.forEach((res, i) => {
       const div = document.createElement("div");
       div.className = "list-item" + (i === state.selectedResource ? " selected" : "");
+      div.dataset.index = String(i);
       div.textContent = `${String(i + 1).padStart(3, "0")}. [${res.kind}] ${res.name}｜${formatBytes(res.size)}`;
       div.onclick = () => { state.selectedResource = i; renderResources(); };
       div.ondblclick = () => previewResource();
@@ -2423,6 +2479,117 @@ ${latexBlock}
     $("commandPalette").classList.remove("active");
   }
 
+  function closeContextMenu() {
+    $("contextMenu").classList.remove("active");
+    $("contextMenu").innerHTML = "";
+  }
+
+  function addContextButton(menu, label, shortcut, fn, disabled = false) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.disabled = disabled;
+    btn.innerHTML = `<span>${escapeHtml(label)}</span><span class="shortcut">${escapeHtml(shortcut || "")}</span>`;
+    btn.addEventListener("click", () => {
+      closeContextMenu();
+      if (!disabled) fn();
+    });
+    menu.appendChild(btn);
+  }
+
+  function addContextSeparator(menu) {
+    const line = document.createElement("div");
+    line.className = "separator";
+    menu.appendChild(line);
+  }
+
+  function positionContextMenu(menu, x, y) {
+    menu.style.left = "0px";
+    menu.style.top = "0px";
+    menu.classList.add("active");
+    const rect = menu.getBoundingClientRect();
+    const left = Math.min(x, window.innerWidth - rect.width - 8);
+    const top = Math.min(y, window.innerHeight - rect.height - 8);
+    menu.style.left = `${Math.max(8, left)}px`;
+    menu.style.top = `${Math.max(8, top)}px`;
+  }
+
+  function selectCaptureFromTarget(target) {
+    const item = target.closest("#captureList .list-item");
+    if (!item) return false;
+    state.selectedCapture = Number(item.dataset.index);
+    renderCaptures();
+    return true;
+  }
+
+  function selectResourceFromTarget(target) {
+    const item = target.closest("#resourceList .list-item");
+    if (!item) return false;
+    state.selectedResource = Number(item.dataset.index);
+    renderResources();
+    return true;
+  }
+
+  async function pasteIntoInput() {
+    try {
+      $("inputText").value = await navigator.clipboard.readText();
+      project().inputText = $("inputText").value;
+      syncEditors();
+      saveLocal();
+      setStatus("已貼上剪貼簿內容。");
+    } catch {
+      setStatus("瀏覽器拒絕讀剪貼簿。");
+    }
+  }
+
+  function showContextMenu(event) {
+    if (document.body.classList.contains("auth-locked")) return;
+    if (!$("app").contains(event.target)) return;
+    event.preventDefault();
+    closeCommand();
+    const menu = $("contextMenu");
+    menu.innerHTML = "";
+    const target = event.target;
+    const hasUndo = state.undo.length > 0;
+    const isCapture = selectCaptureFromTarget(target);
+    const isResource = selectResourceFromTarget(target);
+    const inInput = !!target.closest("#leftPane");
+    const inOutput = !!target.closest("#rightPane");
+
+    if (isCapture) {
+      addContextButton(menu, "刪除選取批次", "Delete", deleteSelectedCapture, state.selectedCapture < 0);
+      addContextButton(menu, "還原刪除", "Ctrl+Z", undo, !hasUndo);
+      addContextSeparator(menu);
+      addContextButton(menu, "RUN 整合", "F5", runIntegration);
+    } else if (isResource) {
+      addContextButton(menu, "預覽資源", "Enter", previewResource, state.selectedResource < 0);
+      addContextButton(menu, "刪除選取資源", "Delete", deleteSelectedResource, state.selectedResource < 0);
+      addContextButton(menu, "還原刪除", "Ctrl+Z", undo, !hasUndo);
+      addContextSeparator(menu);
+      addContextButton(menu, "重新掃描依賴", "", () => { scanDependencies(true); setView("deps"); });
+    } else if (inOutput) {
+      addContextButton(menu, "刪除目前分段", "Delete", deleteCurrentPiece, !activeBlocks().length);
+      addContextButton(menu, "還原刪除", "Ctrl+Z", undo, !hasUndo);
+      addContextSeparator(menu);
+      addContextButton(menu, "下載本段", "", downloadPiece, !activeBlocks().length);
+      addContextButton(menu, "開 IDE/Runner", "Ctrl+Alt+O", openInIdeOrRunner, !activeBlocks().length);
+      addContextButton(menu, "本地執行助手", "Ctrl+Alt+R", openLocalRunAssistant, !activeBlocks().length);
+      addContextButton(menu, "HTML 預覽", "", previewHtmlFromCode);
+    } else if (inInput) {
+      addContextButton(menu, "記錄目前輸入", "Enter", captureInput, !$("inputText").value.trim());
+      addContextButton(menu, "貼上剪貼簿", "", pasteIntoInput);
+      addContextButton(menu, "清空輸入", "", () => { $("inputText").value = ""; project().inputText = ""; syncEditors(); saveLocal(); });
+      addContextSeparator(menu);
+      addContextButton(menu, "還原刪除", "Ctrl+Z", undo, !hasUndo);
+      addContextButton(menu, "RUN 整合", "F5", runIntegration);
+    } else {
+      addContextButton(menu, "RUN 整合", "F5", runIntegration);
+      addContextButton(menu, "還原刪除", "Ctrl+Z", undo, !hasUndo);
+      addContextButton(menu, "命令面板", "Ctrl+K", openCommand);
+      addContextButton(menu, "說明", "F1", showHelp);
+    }
+    positionContextMenu(menu, event.clientX, event.clientY);
+  }
+
   const commands = [
     ["展示模式", () => toggleShowcase()],
     ["載入 Demo 專案", loadDemoProject],
@@ -2486,6 +2653,7 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
             <div class="shortcut-card"><strong><span class="kbd">F1</span> 說明</strong><span>開啟此說明。</span></div>
             <div class="shortcut-card"><strong><span class="kbd">Enter</span> 記錄</strong><span>左側輸入區聚焦時記錄素材；Shift+Enter 換行。</span></div>
             <div class="shortcut-card"><strong><span class="kbd">Delete</span> 刪除</strong><span>刪除選取批次、分段或資源。</span></div>
+            <div class="shortcut-card"><strong><span class="kbd">右鍵</span> 智慧選單</strong><span>依所在區域提供刪除、還原、下載與 Runner。</span></div>
           </div>
         </div>
         <div>
@@ -2549,6 +2717,9 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
   function initEvents() {
     $("tabs").addEventListener("click", e => { if (e.target.dataset.tab) setRibbon(e.target.dataset.tab); });
     $("subtabs").addEventListener("click", e => { if (e.target.dataset.view) setView(e.target.dataset.view); });
+    $("app").addEventListener("contextmenu", showContextMenu);
+    document.addEventListener("click", e => { if (!$("contextMenu").contains(e.target)) closeContextMenu(); });
+    document.addEventListener("scroll", closeContextMenu, true);
     $("inputText").addEventListener("input", () => { project().inputText = $("inputText").value; syncEditors(); saveLocal(); });
     $("inputText").addEventListener("keydown", e => {
       if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); captureInput(); }
@@ -2597,7 +2768,7 @@ Delete / Backspace：刪除選取批次或資源</pre>`);
 
     document.addEventListener("keydown", e => {
       if (document.body.classList.contains("auth-locked")) return;
-      if (e.key === "Escape") { closeModal(); closeCommand(); }
+      if (e.key === "Escape") { closeModal(); closeCommand(); closeContextMenu(); }
       if (e.key === "F1") { e.preventDefault(); showHelp(); }
       if (e.key === "F5") { e.preventDefault(); runIntegration(); }
       if (e.ctrlKey && e.key.toLowerCase() === "b") { e.preventDefault(); browserSafeCheck(); }
